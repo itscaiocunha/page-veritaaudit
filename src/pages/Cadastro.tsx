@@ -1,6 +1,6 @@
-
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -9,9 +9,24 @@ const Cadastro = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Left side placeholder for image */}
-      <div className="w-full md:w-1/2 bg-gray-100 hidden md:block"></div>
+      {/* Imagem visível apenas em mobile e acima do formulário */}
+      <div className="md:hidden w-full flex justify-center pt-8">
+        <img 
+          src="/images/register.png" 
+          alt="Cadastro" 
+          className="object-contain"
+        />
+      </div>
 
+
+      {/* Imagem visível apenas em desktop */}
+      <div className="hidden md:flex md:w-1/2 items-center justify-center p-8">
+        <img 
+          src="/images/register.png" 
+          alt="Cadastro" 
+          className="max-h-[80vh] w-auto object-contain"
+        />
+      </div>
       {/* Right side with form */}
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-8">
         <div className="w-full max-w-md space-y-6">
@@ -82,9 +97,15 @@ const Cadastro = () => {
             </div>
           </div>
 
-          <Button className="w-full bg-[#4C956C] hover:bg-[#2C6E49] text-white py-6">
+          <Button className="w-full bg-[#90EE90] hover:bg-[#90EE90] text-white py-6">
             Cadastrar
           </Button>
+        </div>
+
+        <div className="text-center space-y-2 mt-4 mb-10">
+          <Link to="/login" className="text-sm text-[#90EE90] hover:underline block">
+            Já possuo login!
+          </Link>
         </div>
       </div>
     </div>

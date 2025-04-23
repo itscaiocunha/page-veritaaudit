@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Eye, EyeOff, Mail } from "lucide-react";
@@ -10,7 +9,16 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Left side with form */}
+      {/* Imagem visível apenas em mobile e acima do formulário */}
+      <div className="md:hidden w-full flex justify-center pt-8">
+        <img 
+          src="/images/login.png" 
+          alt="Login" 
+          className="object-contain"
+        />
+      </div>
+
+      {/* Container do formulário - agora ocupa metade em desktop */}
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-8">
         <div className="w-full max-w-md space-y-6">
           <h1 className="text-3xl font-semibold text-center mb-8">Login</h1>
@@ -45,23 +53,29 @@ const Login = () => {
             </div>
           </div>
 
-          <Button className="w-full bg-[#4C956C] hover:bg-[#2C6E49] text-white py-6">
+          <Button className="w-full bg-[#90EE90] hover:bg-[#90EE90] text-white py-6">
             Logar
           </Button>
 
           <div className="text-center space-y-2">
-            <Link to="/recuperar-senha" className="text-sm text-[#4C956C] hover:underline block">
+            <Link to="/recuperar-senha" className="text-sm text-[#90EE90] hover:underline block">
               Esqueci a Senha!
             </Link>
-            <Link to="/cadastro" className="text-sm text-[#4C956C] hover:underline block">
+            <Link to="/cadastro" className="text-sm text-[#90EE90] hover:underline block">
               Não possuo login!
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Right side placeholder for image */}
-      <div className="w-full md:w-1/2 bg-gray-100 hidden md:block"></div>
+      {/* Imagem visível apenas em desktop */}
+      <div className="hidden md:flex md:w-1/2 items-center justify-center p-8">
+        <img 
+          src="/images/login.png" 
+          alt="Login" 
+          className="max-h-[80vh] w-auto object-contain"
+        />
+      </div>
     </div>
   );
 };

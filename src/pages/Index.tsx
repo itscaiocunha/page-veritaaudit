@@ -16,13 +16,22 @@ const Index = () => {
     <>
       {/* Mobile: layout vertical */}
       <div className="md:hidden min-h-screen flex flex-col justify-center items-center p-6 bg-white">
+        <div className=" flex justify-center items-center p-8">
+          <img
+            src="/images/auditoria.png"
+            alt="Ilustração representando uma auditoria pecuária com gráficos e animais"
+            className="h-auto max-h-[80vh] w-auto max-w-full object-contain"
+            loading="eager"
+          />
+        </div>
+
         <div className="w-full max-w-xs space-y-8 text-center">
           <h1 className="text-4xl font-bold text-gray-900">VERITA AUDIT</h1>
 
           <div className="space-y-4">
             <Link to="/login" className="block">
               <Button
-                className="w-full bg-[#4C956C] hover:bg-[#2C6E49] text-white py-6 text-lg focus-visible:outline focus-visible:outline-2"
+                className="w-full bg-[#90EE90] hover:bg-[#90EE90] text-white py-6 text-lg focus-visible:outline focus-visible:outline-2"
               >
                 Entrar <ArrowRight className="ml-2 inline" aria-hidden="true" />
               </Button>
@@ -31,7 +40,7 @@ const Index = () => {
             <Link to="/cadastro" className="block">
               <Button
                 variant="outline"
-                className="w-full border-[#4C956C] text-[#4C956C] hover:bg-[#4C956C] hover:text-white py-6 text-lg focus-visible:outline focus-visible:outline-2"
+                className="w-full border-[#90EE90] text-[#90EE90] hover:bg-[#90EE90] hover:text-white py-6 text-lg focus-visible:outline focus-visible:outline-2"
               >
                 Criar Cadastro <UserPlus className="ml-2 inline" aria-hidden="true" />
               </Button>
@@ -51,7 +60,7 @@ const Index = () => {
             <div className="space-y-8">
               <Link to="/login">
                 <Button
-                  className="w-full bg-[#4C956C] hover:bg-[#2C6E49] text-white py-6 text-lg focus-visible:outline focus-visible:outline-2"
+                  className="w-full bg-[#90EE90] hover:bg-[#90EE90] text-white py-6 text-lg focus-visible:outline focus-visible:outline-2"
                 >
                   Entrar <ArrowRight className="ml-2 inline" aria-hidden="true" />
                 </Button>
@@ -60,7 +69,7 @@ const Index = () => {
               <Link to="/cadastro">
                 <Button
                   variant="outline"
-                  className="w-full mt-4 border-[#4C956C] text-[#4C956C] hover:bg-[#4C956C] hover:text-white py-6 text-lg focus-visible:outline focus-visible:outline-2"
+                  className="w-full mt-4 border-[#90EE90] text-[#90EE90] hover:bg-[#90EE90] hover:text-white py-6 text-lg focus-visible:outline focus-visible:outline-2"
                 >
                   Criar Cadastro <UserPlus className="ml-2 inline" aria-hidden="true" />
                 </Button>
@@ -71,7 +80,7 @@ const Index = () => {
 
         <div className="w-1/2 flex justify-center items-center p-8">
           <img
-            src="/images/auditoria-pecuaria.png"
+            src="/images/auditoria.png"
             alt="Ilustração representando uma auditoria pecuária com gráficos e animais"
             className="h-auto max-h-[80vh] w-auto max-w-full object-contain"
             loading="eager"
