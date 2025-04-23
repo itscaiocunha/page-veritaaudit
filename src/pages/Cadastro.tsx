@@ -18,7 +18,6 @@ const Cadastro = () => {
         />
       </div>
 
-
       {/* Imagem visível apenas em desktop */}
       <div className="hidden md:flex md:w-1/2 items-center justify-center p-8">
         <img 
