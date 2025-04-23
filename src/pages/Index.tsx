@@ -60,7 +60,7 @@ const Index = () => {
               <Link to="/cadastro">
                 <Button
                   variant="outline"
-                  className="w-full border-[#4C956C] text-[#4C956C] hover:bg-[#4C956C] hover:text-white py-6 text-lg focus-visible:outline focus-visible:outline-2"
+                  className="w-full mt-4 border-[#4C956C] text-[#4C956C] hover:bg-[#4C956C] hover:text-white py-6 text-lg focus-visible:outline focus-visible:outline-2"
                 >
                   Criar Cadastro <UserPlus className="ml-2 inline" aria-hidden="true" />
                 </Button>
