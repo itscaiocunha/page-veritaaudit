@@ -90,7 +90,10 @@ const Cadastro = () => {
         <img src="/images/register.png" alt="Cadastro" className="object-contain h-48"/>
       </div>
 
-      <div className="hidden md:flex md:w-1/2 items-center justify-center p-8 bg-white">
+      <div className="w-1/2 flex justify-center items-center" 
+            style={{ 
+              background: "linear-gradient(to bottom right, #90EE90 50%, white 50%)" 
+            }}>
         <img src="/images/register.png" alt="Cadastro" className="max-h-[80vh] w-auto object-contain"/>
       </div>
       

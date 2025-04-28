@@ -78,7 +78,10 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="w-1/2 flex justify-center items-center p-8">
+        <div className="w-1/2 flex justify-center items-center" 
+            style={{ 
+              background: "linear-gradient(to bottom right, white 50%, #90EE90 50%)" 
+            }}>
           <img
             src="/images/auditoria.png"
             alt="Ilustração representando uma auditoria pecuária com gráficos e animais"

@@ -69,7 +69,10 @@ const Login = () => {
       </div>
 
       {/* Imagem visível apenas em desktop */}
-      <div className="hidden md:flex md:w-1/2 items-center justify-center p-8">
+      <div className="w-1/2 flex justify-center items-center" 
+            style={{ 
+              background: "linear-gradient(to bottom left, #90EE90 50%, white 50%)" 
+            }}>
         <img 
           src="/images/login.png" 
           alt="Login" 
