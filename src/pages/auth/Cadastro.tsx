@@ -71,7 +71,7 @@ const Cadastro = () => {
       reset();
       
       setTimeout(() => {
-        navigate('/verificacao');
+        navigate('/verificacao-email');
       }, 2000);
     } catch (error) {
       toast.error("Erro ao cadastrar. Por favor, tente novamente.");
