@@ -11,9 +11,11 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
+  define: {
+    'process.env': process.env
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
