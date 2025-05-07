@@ -11,6 +11,7 @@ import ValidarEmail from "./pages/auth/VerificacaoEmail";
 import ValidarSMS from "./pages/auth/VerificacaoSMS";
 import Qualificacao from "./pages/auth/Qualificacao";
 import RecuperarSenha from "./pages/auth/Recuperar";
+import Validacao from "./pages/auth/Validacao";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/verificacao-sms" element={<ValidarSMS />} />
           <Route path="/qualificacao" element={<Qualificacao />} />
           <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+          <Route path="/validacao" element={<Validacao />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
