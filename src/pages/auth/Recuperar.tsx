@@ -12,8 +12,8 @@ const RecuperarSenha = () => {
       {/* Imagem visível apenas em mobile e acima do formulário */}
       <div className="md:hidden w-full flex justify-center pt-8">
         <img 
-          src="/images/login.png" 
-          alt="Login" 
+          src="/images/esqueceu.png"
+          alt="Esqueceu" 
           className="object-contain"
         />
       </div>
@@ -21,7 +21,10 @@ const RecuperarSenha = () => {
       {/* Container do formulário - agora ocupa metade em desktop */}
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-8">
         <div className="w-full max-w-md space-y-6">
-          <h1 className="text-3xl font-semibold text-center mb-8">Login</h1>
+          <div className="text-center space-y-2 mb-8">
+            <h1 className="text-3xl font-semibold mb-6">Esqueceu sua senha?</h1>
+            <p className="text-gray-600">Digite seu e-mail cadastrado</p>            
+          </div>
 
           <div className="space-y-4">
             <div className="relative">
@@ -32,49 +35,27 @@ const RecuperarSenha = () => {
                 className="pl-10 py-6"
               />
             </div>
-
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                placeholder="Senha"
-                className="pr-10 py-6"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-400" />
-                ) : (
-                  <Eye className="h-5 w-5 text-gray-400" />
-                )}
-              </button>
-            </div>
           </div>
 
           <Button className="w-full bg-[#90EE90] hover:bg-[#90EE90] text-white py-6">
-            Logar
+            Enviar Código
           </Button>
 
           <div className="text-center space-y-2">
-            <Link to="/recuperar-senha" className="text-sm text-[#90EE90] hover:underline block">
-              Esqueci a Senha!
-            </Link>
-            <Link to="/cadastro" className="text-sm text-[#90EE90] hover:underline block">
-              Não possuo login!
+            <Link to="/login" className="text-sm text-[#90EE90] hover:underline block">
+              Voltar ao login!
             </Link>
           </div>
         </div>
       </div>
 
       {/* Imagem visível apenas em desktop */}
-      <div className="w-1/2 flex justify-center items-center" 
-            style={{ 
-              background: "linear-gradient(to bottom left, #90EE90 50%, white 50%)" 
-            }}>
+      <div className="hidden md:flex w-1/2 justify-center items-center"
+          style={{ 
+            background: "linear-gradient(to bottom left, #90EE90 50%, white 50%)" 
+          }}>
         <img 
-          src="/images/login.png" 
+          src="/images/esqueceu.png" 
           alt="Login" 
           className="max-h-[80vh] w-auto object-contain"
         />

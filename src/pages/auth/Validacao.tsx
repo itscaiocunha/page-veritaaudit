@@ -112,7 +112,8 @@ const Validacao = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4">
+
       <div className="w-full max-w-md border-[3px] border-[#90EE90] rounded-lg p-8 flex flex-col items-center">
         <div className="bg-gray-200 w-24 h-12 mb-6 flex items-center justify-center" aria-hidden="true">
           {/* Logo placeholder */}
