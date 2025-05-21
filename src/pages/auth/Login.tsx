@@ -73,7 +73,7 @@ const Login = () => {
       // sessionStorage.setItem('token', response.data.token);
       
       // Redirecionar com replace para evitar voltar para login
-      navigate('/validacao', { replace: true });
+      navigate('/qualificacao', { replace: true });
     } catch (error) {
       if (axios.isAxiosError(error)) {
         setErrorMessage(error.response?.data?.message || 'E-mail ou senha incorretos');
