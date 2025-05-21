@@ -4,15 +4,30 @@ import { Input } from "@/components/ui/input";
 import { Plus, Trash2, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { useDropzone } from "react-dropzone";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Titulo = {
   tipo: string;
-  graduacao: string;
-  posGraduacao: string;
+  curso: string;
   instituicao: string;
-  dataGraduacao: string;
+  dataConclusao: string;
   expanded: boolean;
 };
+
+const tiposTitulacao = [
+  "Técnico",
+  "Graduação",
+  "Especialização",
+  "Mestrado",
+  "Doutorado",
+  "Pós-Doutorado",
+];
 
 const FileDropzone = ({ 
   onFileAccepted, 
@@ -91,7 +106,13 @@ const Qualificacao = () => {
   const [profissao, setProfissao] = useState("");
   const [cargo, setCargo] = useState("");
   const [curriculoLattes, setCurriculoLattes] = useState("");
-  const [titulos, setTitulos] = useState<Titulo[]>([]);
+  const [titulos, setTitulos] = useState<Titulo[]>([{
+    tipo: "",
+    curso: "",
+    instituicao: "",
+    dataConclusao: "",
+    expanded: true
+  }]);
   const [curriculos, setCurriculos] = useState<Array<File | null>>([]);
   const [extras, setExtras] = useState<Array<File | null>>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -121,11 +142,10 @@ const Qualificacao = () => {
   const adicionarTitulo = () => {
     const novoTitulo: Titulo = {
       tipo: "",
-      graduacao: "",
-      posGraduacao: "",
+      curso: "",
       instituicao: "",
-      dataGraduacao: "",
-      expanded: true
+      dataConclusao: "",
+      expanded: false // os próximos não abrem automaticamente
     };
     setTitulos([...titulos, novoTitulo]);
   };
@@ -187,6 +207,19 @@ const Qualificacao = () => {
         return;
       }
 
+      // Validar todos os títulos
+      for (const titulo of titulos) {
+        if (!titulo.tipo || !titulo.curso || !titulo.instituicao || !titulo.dataConclusao) {
+          toast.error("Por favor, preencha todos os campos obrigatórios dos títulos");
+          return;
+        }
+        
+        if (!validarData(titulo.dataConclusao)) {
+          toast.error("A data de conclusão não pode ser futura");
+          return;
+        }
+      }
+
       if (curriculos.some(file => file === null)) {
         toast.error("Por favor, adicione todos os currículos");
         return;
@@ -197,22 +230,11 @@ const Qualificacao = () => {
         return;
       }
 
-      // Novas validações
       if (curriculoLattes && !validarLattes(curriculoLattes)) {
         toast.error(<div>
           <p className="font-semibold">Link do Lattes inválido</p>
           <p className="text-sm">O link deve seguir o formato: http://lattes.cnpq.br/123456789</p>
         </div>);
-        return;
-      }
-
-      if (titulos.some(t => t.dataGraduacao && !validarData(t.dataGraduacao))) {
-        toast.error("A data de graduação não pode ser futura");
-        return;
-      }
-
-      if ([...curriculos, ...extras].some(file => file && !validarTamanhoArquivo(file))) {
-        toast.error("Os arquivos não podem exceder 5MB");
         return;
       }
 
@@ -243,33 +265,6 @@ const Qualificacao = () => {
       <div className="w-full max-w-4xl rounded-lg p-8 bg-white shadow-md">
         <h2 className="text-2xl font-semibold text-center mb-6">Olá, {nome}</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium mb-2">
-              <RequiredField>Profissão</RequiredField>
-            </label>
-            <Input 
-              id="profissao" 
-              className="py-6" 
-              placeholder="Profissão" 
-              value={profissao}
-              onChange={(e) => setProfissao(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium mb-2">
-              <RequiredField>Cargo</RequiredField>
-            </label>
-            <Input 
-              id="cargo" 
-              className="py-6" 
-              placeholder="Cargo" 
-              value={cargo}
-              onChange={(e) => setCargo(e.target.value)}
-            />
-          </div>
-        </div>
 
         <div className="space-y-6 mb-6">
           {/* Seção de Titulação */}
@@ -308,12 +303,21 @@ const Qualificacao = () => {
                         <label className="block text-sm font-medium">
                           <RequiredField>Tipo de Titulação</RequiredField>
                         </label>
-                        <Input
+                        <Select
                           value={titulo.tipo}
-                          onChange={(e) => atualizarTitulo(index, 'tipo', e.target.value)}
-                          placeholder="Ex: Acadêmica, Profissional"
-                          className="py-4"
-                        />
+                          onValueChange={(value) => atualizarTitulo(index, 'tipo', value)}
+                        >
+                          <SelectTrigger className="py-4">
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tiposTitulacao.map((tipo) => (
+                              <SelectItem key={tipo} value={tipo}>
+                                {tipo}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2">
                         <label className="block text-sm font-medium">
@@ -331,36 +335,26 @@ const Qualificacao = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="block text-sm font-medium">
-                          <RequiredField>Titulação da Graduação</RequiredField>
+                          <RequiredField>Nome do Curso</RequiredField>
                         </label>
                         <Input
-                          value={titulo.graduacao}
-                          onChange={(e) => atualizarTitulo(index, 'graduacao', e.target.value)}
-                          placeholder="Ex: Bacharel em Direito"
+                          value={titulo.curso}
+                          onChange={(e) => atualizarTitulo(index, 'curso', e.target.value)}
+                          placeholder="Ex: Direito, Engenharia Civil"
                           className="py-4"
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-sm font-medium">Titulação da Pós-Graduação</label>
+                        <label className="block text-sm font-medium">
+                          <RequiredField>Data de Conclusão</RequiredField>
+                        </label>
                         <Input
-                          value={titulo.posGraduacao}
-                          onChange={(e) => atualizarTitulo(index, 'posGraduacao', e.target.value)}
-                          placeholder="Ex: Mestre em Direito Civil"
+                          type="date"
+                          value={titulo.dataConclusao}
+                          onChange={(e) => atualizarTitulo(index, 'dataConclusao', e.target.value)}
                           className="py-4"
                         />
                       </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium">
-                        <RequiredField>Data da Graduação</RequiredField>
-                      </label>
-                      <Input
-                        type="date"
-                        value={titulo.dataGraduacao}
-                        onChange={(e) => atualizarTitulo(index, 'dataGraduacao', e.target.value)}
-                        className="py-4"
-                      />
                     </div>
                     
                     <div className="flex justify-end">
@@ -417,24 +411,10 @@ const Qualificacao = () => {
             ))}
           </div>
 
-          {/* Seção de Currículo Lattes */}
-          <div className="space-y-2">
-            <label className="block text-lg font-semibold mb-2 flex items-center">
-              <RequiredField>Currículo Lattes</RequiredField>
-            </label>
-            <Input 
-              id="curriculo-lattes" 
-              className="py-6" 
-              placeholder="Link do Currículo Lattes" 
-              value={curriculoLattes}
-              onChange={(e) => setCurriculoLattes(e.target.value)}
-            />
-          </div>
-
-          {/* Seção de Informações Extras */}
+          {/* Seção de Certificados */}
           <div className="space-y-4">
             <label className="block text-lg font-semibold mb-2">
-              <RequiredField>Certificados e Qualificações (PDF)</RequiredField>
+              <RequiredField>Certificados (PDF)</RequiredField>
             </label>
             <Button
               variant="outline"
@@ -443,9 +423,9 @@ const Qualificacao = () => {
             >
               <Plus className="h-4 w-4" /> Adicionar Certificado
             </Button>
-            
+
             {extras.map((file, index) => (
-              <div key={`extra-${index}`} className="mt-2">
+              <div key={`certificado-${index}`} className="mt-2">
                 <FileDropzone
                   onFileAccepted={(file) => {
                     if (!validarPDF(file)) {

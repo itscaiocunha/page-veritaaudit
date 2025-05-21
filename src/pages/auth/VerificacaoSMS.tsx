@@ -73,7 +73,7 @@ const ValidarSMS = () => {
       if (response.valid) {
         toast.success("Número validado com sucesso!");
         setValue("");
-        navigate('/qualificacao');
+        navigate('/login');
       } else {
         setAttempts(prev => prev + 1);
         const remainingAttempts = 3 - attempts - 1;

@@ -195,7 +195,7 @@ const Login = () => {
               {loading ? 'Carregando...' : 'Entrar'}
             </Button>
 
-            <div className="relative">
+            {/* <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
               </div>
@@ -210,7 +210,7 @@ const Login = () => {
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6"
             >
               Entrar com Gov.br
-            </Button>
+            </Button> */}
 
             <div className="text-center space-y-2">
               <Link to="/cadastro" className="text-sm text-[#90EE90] hover:underline block">
