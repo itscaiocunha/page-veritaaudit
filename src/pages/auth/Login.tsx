@@ -8,7 +8,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import axios from "axios";
 import ReCAPTCHA from "react-google-recaptcha";
-import { mask } from "remask";
+import api from "@/lib/axios";
+
 
 // Configuração do axios para interceptors
 axios.interceptors.response.use(
@@ -35,7 +36,7 @@ type FormData = yup.InferType<typeof schema>;
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [captchaVerified, setCaptchaVerified] = useState<string | null>(null);
+  // const [captchaVerified, setCaptchaVerified] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -52,17 +53,18 @@ const Login = () => {
   };
 
   const onSubmit = async (data: FormData) => {
-    if (!captchaVerified) {
-      setErrorMessage('Por favor, complete o CAPTCHA');
-      return;
-    }
+    // if (!captchaVerified) {
+    //   setErrorMessage('Por favor, complete o CAPTCHA');
+    //   return;
+    // }
 
     setLoading(true);
     try {
-      // const response = await axios.post('/api/auth/login', {
-      //   ...data,
-      //   captcha: captchaVerified
-      // });
+      const response = await api.post('/user/login', {
+        email: data.email,
+        senha: data.password,
+        // captcha: captchaVerified
+      });    
 
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', data.email);
@@ -70,7 +72,7 @@ const Login = () => {
         localStorage.removeItem('rememberedEmail');
       }
 
-      // sessionStorage.setItem('token', response.data.token);
+      sessionStorage.setItem('token', response.data.token);
       
       // Redirecionar com replace para evitar voltar para login
       navigate('/qualificacao', { replace: true });
@@ -85,9 +87,9 @@ const Login = () => {
     }
   };
 
-  const handleGovBrLogin = () => {
-    window.location.href = 'https://sso.acesso.gov.br/login';
-  };
+  // const handleGovBrLogin = () => {
+  //   window.location.href = 'https://sso.acesso.gov.br/login';
+  // };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -179,13 +181,13 @@ const Login = () => {
               </div>
             </div>
                         
-            <ReCAPTCHA
+            {/* <ReCAPTCHA
               sitekey="6LegOy8rAAAAAN0nYjp8E_Jf1tOtxAXIoG4Bsj6C"
               onChange={(token) => setCaptchaVerified(token)}
               onExpired={() => setCaptchaVerified(null)}
               size="normal"
               theme="light"
-            />
+            /> */}
 
             <Button 
               type="submit"
