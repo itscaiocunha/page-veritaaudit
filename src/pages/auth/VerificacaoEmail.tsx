@@ -20,7 +20,7 @@ const ValidarEmail = () => {
   const navigate = useNavigate();
 
   // Obtenha o identificador do usuário. Adapte esta linha conforme onde você armazena.
-  const userIdentifier = localStorage.getItem('userEmailForValidation') || 'caiogrilocunha@gmail.com';
+  const userIdentifier = localStorage.getItem('userEmail') || 'caiogrilocunha@gmail.com';
 
   // Efeito para controlar tempo de reenvio (5 minutos)
   useEffect(() => {

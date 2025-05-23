@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import axios from "axios";
+import api from "@/lib/axios";
 import { toast } from "react-toastify";
 
 // Schema de validação
@@ -17,7 +18,7 @@ const schema = yup.object({
   telefone: yup.string().required("Telefone é obrigatório").matches(/^\(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido"),
   emailPrincipal: yup.string().required("E-mail principal é obrigatório").email("E-mail inválido").test("no-gmail", "Permitido apenas domínios próprios", value => !value?.toLowerCase().endsWith('@gmail.com')),
   emailSecundario: yup.string().email("E-mail secundário inválido").notRequired(),
-  password: yup.string().required("Senha é obrigatória").min(8).matches(/[A-Z]/).matches(/[a-z]/).matches(/[0-9]/).matches(/[!@#$%^&*(),.?":{}|<>]/),
+  password: yup.string().required("Senha é obrigatória").min(8, "Mínimo de 8 caracteres").matches(/[A-Z]/, "Pelo menos 1 letra maiúscula").matches(/[a-z]/, "Pelo menos 1 letra minúscula").matches(/[0-9]/, "Pelo menos 1 número").matches(/[!@#$%^&*(),.?":{}|<>]/, "Pelo menos 1 caractere especial"),
   cnpj: yup.string().required("CNPJ da Empresa é obrigatório").matches(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, "CNPJ inválido"),
   profissao: yup.string().required("Profissão é obrigatória"),
   curriculoLattes: yup.string().url("Informe uma URL válida para o currículo Lattes").notRequired(),
@@ -67,42 +68,93 @@ const Cadastro = () => {
   const onSubmit = async (data: FormData) => {
     try {
       const dadosParaEnviar = {
-        ...data,
+        nome: data.nome,
         cpf: data.cpf.replace(/\D/g, ''),
-        telefone: data.telefone.replace(/\D/g, ''),
-        role: "gestor"
+        celular: data.telefone.replace(/\D/g, ''),
+        emailPrincipal: data.emailPrincipal,
+        emailSecundario: data.emailSecundario || undefined,
+        senha: data.password,
+        cnpj: data.cnpj.replace(/\D/g, ''),
+        profissao: data.profissao,
+        cep: data.cep.replace(/\D/g, ''),
+        rua: data.logradouro,
+        bairro: data.bairro,
+        numeral: parseInt(data.numero, 10),
+        uf: data.uf,
+        cidade: data.cidade,
+        complemento: data.complemento || undefined,
+        curriculoLattes: data.curriculoLattes || undefined
       };
-      // await axios.post('/api/gestores', dadosParaEnviar);
-      console.log("Dados que serão enviados:", dadosParaEnviar);
-      toast.success("Cadastrado com sucesso!");
-      reset();
-      setTimeout(() => navigate('/verificacao-email'), 2000);
+
+      console.log("Dados que serão enviados para a API:", dadosParaEnviar);
+
+      const response = await api.post('/gestor', dadosParaEnviar);
+
+      // Verifique se o status é 200 (ou 201) e se os dados esperados estão na resposta
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Cadastrado com sucesso!");
+        reset();
+
+        // **CORREÇÃO AQUI para o e-mail:**
+        if (response.data.emailPrincipal) { // <-- MUDADO DE response.data.email PARA response.data.emailPrincipal
+          localStorage.setItem('userEmail', response.data.emailPrincipal);
+        } else {
+          localStorage.setItem('userEmail', data.emailPrincipal);
+        }
+
+        // A lógica para o telefone/celular já estava correta, mas vale revisar para clareza
+        if (response.data.telefone) {
+          localStorage.setItem('userTelefone', response.data.telefone);
+        } else if (response.data.celular) {
+            localStorage.setItem('userTelefone', response.data.celular);
+        } else {
+            localStorage.setItem('userTelefone', data.telefone.replace(/\D/g, ''));
+        }
+
+        setTimeout(() => navigate('/verificacao-email'), 2000);
+      } else {
+        toast.info("Cadastro realizado, mas com um status inesperado. Verifique.");
+      }
+
     } catch (error) {
-      toast.error("Erro ao cadastrar. Por favor, tente novamente.");
-      console.error("Erro no cadastro:", error);
+      if (axios.isAxiosError(error)) {
+        const errorMessageFromApi = error.response?.data?.message || 'Erro ao processar sua solicitação.';
+        toast.error(errorMessageFromApi);
+        console.error("Erro no cadastro (API):", error.response?.data || error.message);
+      } else {
+        toast.error("Erro desconhecido ao cadastrar. Por favor, tente novamente.");
+        console.error("Erro desconhecido no cadastro:", error);
+      }
     }
   };
 
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawCep = e.target.value.replace(/\D/g, "");
-    setValue("cep", e.target.value);
+    setValue("cep", e.target.value, { shouldValidate: true });
+
     if (rawCep.length === 8) {
       try {
         const res = await axios.get(`https://viacep.com.br/ws/${rawCep}/json/`);
         if (res.data.erro) {
           toast.error("CEP não encontrado");
+          setValue("logradouro", "");
+          setValue("bairro", "");
+          setValue("cidade", "");
+          setValue("uf", "");
+          setValue("complemento", "");
           return;
         }
-        setValue("logradouro", res.data.logradouro || "");
-        setValue("bairro", res.data.bairro || "");
-        setValue("cidade", res.data.localidade || "");
-        setValue("uf", res.data.uf || "");
-        setValue("complemento", res.data.complemento || "");
-      } catch {
-        toast.error("Erro ao buscar o CEP");
+        setValue("logradouro", res.data.logradouro || "", { shouldValidate: true });
+        setValue("bairro", res.data.bairro || "", { shouldValidate: true });
+        setValue("cidade", res.data.localidade || "", { shouldValidate: true });
+        setValue("uf", res.data.uf || "", { shouldValidate: true });
+        setValue("complemento", res.data.complemento || "", { shouldValidate: true });
+      } catch (error) {
+        toast.error("Erro ao buscar o CEP. Verifique sua conexão.");
+        console.error("Erro ViaCEP:", error);
       }
     }
-  } 
+  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -188,14 +240,22 @@ const Cadastro = () => {
               <InputMask mask="99999-999" value={watch("cep") || ""} onChange={handleCepChange}>
                 {(props: any) => <Input {...props} placeholder="CEP*" />}
               </InputMask>
+              {errors.cep && <p className="text-red-500 text-sm">{errors.cep.message}</p>}
               <Input {...register("numero")} placeholder="Número*" />
+              {errors.numero && <p className="text-red-500 text-sm">{errors.numero.message}</p>}
               <Input {...register("logradouro")} placeholder="Logradouro*" disabled />
+              {errors.logradouro && <p className="text-red-500 text-sm">{errors.logradouro.message}</p>}
               <Input {...register("bairro")} placeholder="Bairro*" disabled />
+              {errors.bairro && <p className="text-red-500 text-sm">{errors.bairro.message}</p>}
               <Input {...register("cidade")} placeholder="Cidade*" disabled />
+              {errors.cidade && <p className="text-red-500 text-sm">{errors.cidade.message}</p>}
               <Input {...register("uf")} placeholder="UF*" disabled />
+              {errors.uf && <p className="text-red-500 text-sm">{errors.uf.message}</p>}
               <Input {...register("complemento")} placeholder="Complemento (opcional)" />
+              {errors.complemento && <p className="text-red-500 text-sm">{errors.complemento.message}</p>}
+
               <div className="flex justify-between gap-4">
-                <Button type="button" onClick={() => setStep(1)} className="w-full py-6 bg-gray-300 text-black hover:bg-gray-400">
+                <Button type="button" onClick={() => setStep(2)} className="w-full py-6 bg-gray-300 text-black hover:bg-gray-400">
                   Voltar
                 </Button>
                 <Button type="submit" disabled={!isValid} className="w-full py-6 font-bold bg-[#90EE90] hover:bg-[#90EE90]">
