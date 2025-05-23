@@ -11,12 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // Keep this import
 import api from "@/lib/axios";
 import axios from "axios";
 
-const navigate = useNavigate();
-
+// Define the Titulo type
 type Titulo = {
   tipo: string; // Este é o valor do Select (e.g., "Graduação")
   curso: string;
@@ -25,6 +24,7 @@ type Titulo = {
   expanded: boolean;
 };
 
+// Define the available titulation types
 const tiposTitulacao = [
   "TECNICO",
   "GRADUACAO",
@@ -33,6 +33,7 @@ const tiposTitulacao = [
   "DOUTORADO",
 ];
 
+// FileDropzone component (UNCOMMENTED AND PROPERLY DEFINED)
 const FileDropzone = ({
   onFileAccepted,
   file,
@@ -94,7 +95,7 @@ const FileDropzone = ({
   );
 };
 
-// **MOVIDO PARA CIMA:** Declaração do componente RequiredField
+// RequiredField component
 const RequiredField = ({ children }: { children: React.ReactNode }) => (
   <div className="flex items-center gap-1">
     {children}
@@ -102,11 +103,15 @@ const RequiredField = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
+// LoadingSpinner component
 const LoadingSpinner = () => (
   <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
 );
 
+// Qualificacao component
 const Qualificacao = () => {
+  const navigate = useNavigate(); // useNavigate hook moved inside the component
+
   const [titulos, setTitulos] = useState<Titulo[]>([{
     tipo: "",
     curso: "",
@@ -131,15 +136,18 @@ const Qualificacao = () => {
     }
   }, []);
 
+  // Validates if the file is a PDF
   const validarPDF = (file: File): boolean => {
     return file.type === "application/pdf";
   };
 
+  // Validates the file size (max 5MB)
   const validarTamanhoArquivo = (file: File): boolean => {
     const maxSize = 5 * 1024 * 1024; // 5MB
     return file.size <= maxSize;
   };
 
+  // Validates if the date is not in the future
   const validarData = (data: string): boolean => {
     const hoje = new Date();
     const dataSelecionada = new Date(data + 'T00:00:00');
@@ -148,6 +156,7 @@ const Qualificacao = () => {
     return dataSelecionada <= hoje;
   };
 
+  // Adds a new titulation field
   const adicionarTitulo = () => {
     const novoTitulo: Titulo = {
       tipo: "",
@@ -159,12 +168,14 @@ const Qualificacao = () => {
     setTitulos([...titulos, novoTitulo]);
   };
 
+  // Toggles the expansion of a titulation field
   const toggleExpandirTitulo = (index: number) => {
     const novosTitulos = [...titulos];
     novosTitulos[index].expanded = !novosTitulos[index].expanded;
     setTitulos(novosTitulos);
   };
 
+  // Updates a specific field of a titulation
   const atualizarTitulo = (index: number, campo: keyof Titulo, valor: string) => {
     const novosTitulos = [...titulos];
     novosTitulos[index] = {
@@ -174,32 +185,38 @@ const Qualificacao = () => {
     setTitulos(novosTitulos);
   };
 
+  // Removes a titulation field
   const removerTitulo = (index: number) => {
     const novos = titulos.filter((_, i) => i !== index);
     setTitulos(novos);
     toast.success("Título removido!");
   };
 
+  // Adds a new curriculum file input
   const adicionarCurriculo = () => {
     setCurriculos([...curriculos, null]);
   };
 
+  // Adds a new extra certificate file input
   const adicionarExtra = () => {
     setExtras([...extras, null]);
   };
 
+  // Removes a curriculum file input
   const removerCurriculo = (index: number) => {
     const novos = curriculos.filter((_, i) => i !== index);
     setCurriculos(novos);
     toast.success("Currículo removido!");
   };
 
+  // Removes an extra certificate file input
   const removerExtra = (index: number) => {
     const novos = extras.filter((_, i) => i !== index);
     setExtras(novos);
     toast.success("Certificado removido!");
   };
 
+  // Handles the final submission of the form
   const handleFinalizar = async () => {
     setIsSubmitting(true);
 
@@ -241,9 +258,9 @@ const Qualificacao = () => {
       }
 
       if (curriculos.length === 0) {
-          toast.error("É obrigatório enviar pelo menos um currículo.");
-          setIsSubmitting(false);
-          return;
+        toast.error("É obrigatório enviar pelo menos um currículo.");
+        setIsSubmitting(false);
+        return;
       }
 
       if (curriculos.some(file => file === null)) {
@@ -258,7 +275,7 @@ const Qualificacao = () => {
         return;
       }
 
-      // --- Preparar FormData para envio ---
+      // --- Prepare FormData for submission ---
       const formData = new FormData();
 
       curriculos.forEach(file => {
@@ -280,15 +297,13 @@ const Qualificacao = () => {
         dataConclusao: t.dataConclusao
       }));
 
-      const dataJsonString = JSON.stringify({ titulacoes: titulosFormatadosParaAPI });
-
       formData.append('data', new Blob(
         [JSON.stringify({ titulacoes: titulosFormatadosParaAPI })],
         { type: 'application/json' }
-      ));      
+      ));
       console.log([...formData.entries()])
 
-      // --- Envio para a API ---
+      // --- Send to API ---
       const response = await api.post('/gestor/qualification', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -328,7 +343,7 @@ const Qualificacao = () => {
           {/* Seção de Titulação */}
           <div className="space-y-4">
             <label className="block text-lg font-semibold mb-2">
-              <RequiredField>Titulação</RequiredField> {/* Linha 290 no seu erro original */}
+              <RequiredField>Titulação</RequiredField>
             </label>
             <Button
               variant="outline"
@@ -447,7 +462,7 @@ const Qualificacao = () => {
 
             {curriculos.map((file, index) => (
               <div key={`curriculo-${index}`} className="mt-2">
-                <FileDropzone
+                <FileDropzone // FileDropzone is now correctly used here
                   onFileAccepted={(file) => {
                     if (!validarPDF(file)) {
                       toast.error("Por favor, selecione um arquivo PDF.");
@@ -485,7 +500,7 @@ const Qualificacao = () => {
 
             {extras.map((file, index) => (
               <div key={`certificado-${index}`} className="mt-2">
-                <FileDropzone
+                <FileDropzone // FileDropzone is now correctly used here
                   onFileAccepted={(file) => {
                     if (!validarPDF(file)) {
                       toast.error("Por favor, selecione um arquivo PDF.");
