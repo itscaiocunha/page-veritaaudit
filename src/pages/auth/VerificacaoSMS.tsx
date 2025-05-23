@@ -1,32 +1,14 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { 
+import {
   InputOTP,
   InputOTPGroup,
-  InputOTPSlot 
+  InputOTPSlot
 } from "@/components/ui/input-otp";
 import { toast } from "@/components/ui/sonner";
 import { useNavigate } from "react-router-dom";
-
-// Mock da API - Remova quando a API real estiver disponível
-const mockApi = {
-  sendSMSCode: async () => {
-    // Simula delay de rede
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return { success: true };
-  },
-  
-  verifySMSCode: async (code: string) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock de validação - código "5678" é considerado válido
-    if (code === "5678") {
-      return { valid: true };
-    } else {
-      return { valid: false, error: "Código inválido" };
-    }
-  }
-};
+import api from "@/lib/axios";
+import axios from "axios"; // Importe axios se estiver usando axios.isAxiosError
 
 const ValidarSMS = () => {
   const [value, setValue] = useState("");
@@ -34,27 +16,78 @@ const ValidarSMS = () => {
   const [lastSentTime, setLastSentTime] = useState<Date | null>(null);
   const [canResend, setCanResend] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [validationToken, setValidationToken] = useState<string | null>(null);
   const navigate = useNavigate();
-  
-  // Efeito para controlar tempo de reenvio (1 minuto)
+
+  // Obtenha o identificador do usuário. Adapte esta linha conforme onde você armazena.
+  const userIdentifierSMS = localStorage.getItem('userTelefone') || '19989245577';
+
+  // Efeito para controlar tempo de reenvio (5 minutos)
   useEffect(() => {
     if (lastSentTime) {
       const timer = setTimeout(() => {
         setCanResend(true);
-      }, 60000);
-      
+      }, 300000); // <-- ALTERADO: 300000 milissegundos = 5 minutos
+
       return () => clearTimeout(timer);
     }
   }, [lastSentTime]);
 
-  // Envia o código inicial quando o componente montar
+  // --- Função para enviar o código ---
+  const sendVerificationCode = async () => {
+    if (!userIdentifierSMS) {
+      toast.error("Erro: Identificador do usuário não encontrado. Por favor, refaça o login.");
+      navigate('/login');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await api.post('/gestor/verify/sms', {
+        identificador: userIdentifierSMS
+      });
+
+      if (response.data && response.data.token) {
+        setValidationToken(response.data.token);
+        setLastSentTime(new Date());
+        setCanResend(false);
+        setAttempts(0);
+        setValue("");
+        toast.success("Código de verificação enviado para o seu telefone!");
+      } else {
+        toast.error("Erro ao receber o token. Tente novamente.");
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const errorMessageFromApi = error.response?.data?.message;
+        if (errorMessageFromApi) {
+          toast.error(errorMessageFromApi);
+        } else {
+          toast.error("Erro ao enviar código de verificação. Por favor, tente novamente.");
+        }
+      } else {
+        toast.error("Erro desconhecido ao enviar código.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // --- Efeito para enviar o código automaticamente ao carregar a página ---
   useEffect(() => {
-    handleResendCode();
+    if (!validationToken) {
+      sendVerificationCode();
+    }
   }, []);
 
   const handleValidate = async () => {
-    if (value.length < 4) {
-      toast.error("Por favor, insira o código completo de 4 dígitos.");
+    if (value.length < 6) {
+      toast.error("Por favor, insira o código completo de 6 dígitos.");
+      return;
+    }
+
+    if (!validationToken) {
+      toast.error("Erro: Token de validação não encontrado. Por favor, solicite um novo código.");
       return;
     }
 
@@ -64,15 +97,16 @@ const ValidarSMS = () => {
     }
 
     setIsLoading(true);
-    
     try {
-      // Substitua esta chamada pela API real quando disponível
-      // const response = await axios.post('/api/gestores/confirm-mfa', {...});
-      const response = await mockApi.verifySMSCode(value);
-      
-      if (response.valid) {
-        toast.success("Número validado com sucesso!");
+      const response = await api.post('/gestor/auth/sms', {
+        token: validationToken,
+        codigo: value
+      });
+
+      if (response.status === 200) {
+        toast.success("Telefone validado com sucesso!");
         setValue("");
+        setAttempts(0);
         navigate('/login');
       } else {
         setAttempts(prev => prev + 1);
@@ -80,35 +114,32 @@ const ValidarSMS = () => {
         toast.error(`Código inválido. ${remainingAttempts > 0 ? `Tentativas restantes: ${remainingAttempts}` : 'Solicite um novo código.'}`);
       }
     } catch (error) {
-      toast.error("Erro ao validar código. Por favor, tente novamente.");
+      if (axios.isAxiosError(error)) {
+        const errorMessageFromApi = error.response?.data?.message;
+        if (errorMessageFromApi) {
+          toast.error(errorMessageFromApi);
+        } else {
+          toast.error("Erro ao validar código. Por favor, tente novamente.");
+        }
+      } else {
+        toast.error("Erro desconhecido ao validar código.");
+      }
+      setAttempts(prev => prev + 1);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResendCode = async () => {
+  const handleResendCode = () => {
     if (!canResend && lastSentTime) {
-      const timeLeft = Math.ceil((60000 - (Date.now() - lastSentTime.getTime())) / 1000);
-      toast.info(`Aguarde ${timeLeft} segundos para reenviar o código`);
+      // Cálculo do tempo restante em segundos
+      const timeLeft = Math.ceil((300000 - (Date.now() - lastSentTime.getTime())) / 1000);
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      toast.info(`Aguarde ${minutes > 0 ? `${minutes} minuto(s) e ` : ''}${seconds} segundo(s) para reenviar o código`);
       return;
     }
-
-    setIsLoading(true);
-    
-    try {
-      // Substitua esta chamada pela API real quando disponível
-      // await axios.post('/api/gestores/verify/sms');
-      await mockApi.sendSMSCode();
-      
-      setLastSentTime(new Date());
-      setCanResend(false);
-      setAttempts(0);
-      setValue("");
-    } catch (error) {
-      toast.error("Erro ao enviar novo código. Por favor, tente novamente.");
-    } finally {
-      setIsLoading(false);
-    }
+    sendVerificationCode();
   };
 
   return (
@@ -117,66 +148,63 @@ const ValidarSMS = () => {
         <div className="bg-gray-200 w-24 h-12 mb-6 flex items-center justify-center" aria-hidden="true">
           {/* Logo placeholder */}
         </div>
-        
-        <h1 className="text-2xl font-semibold mb-2 text-center">Valide seu número</h1>
+
+        <h1 className="text-2xl font-semibold mb-2 text-center">Valide seu telefone</h1>
         <p className="text-gray-500 text-sm mb-6 text-center">
-          Enviamos um SMS para o seu telefone
+          Enviamos um código para o seu número de telefone
           <br />
         </p>
-        
+
         <div className="mb-6 w-full flex justify-center">
-          <InputOTP 
-            maxLength={4}
-            value={value} 
-            onChange={(value) => {
-              setValue(value);
-              if (attempts > 0) setAttempts(0);
-            }}
+          <InputOTP
+            maxLength={6}
+            value={value}
+            onChange={setValue}
             className="[&>div>div]:gap-5"
-            aria-label="Código de verificação por SMS"
+            aria-label="Código de verificação de telefone"
           >
             <InputOTPGroup>
-              {[0, 1, 2, 3].map((index) => (
-                <InputOTPSlot 
+              {[0, 1, 2, 3, 4, 5].map((index) => (
+                <InputOTPSlot
                   key={index}
-                  index={index} 
-                  className="border border-[#90EE90] rounded-md h-14 w-14 text-lg focus:border-[#90EE90] focus:outline-none" 
+                  index={index}
+                  className="border border-[#90EE90] rounded-md h-14 w-14 text-lg focus:border-[#90EE90] focus:outline-none"
                 />
               ))}
             </InputOTPGroup>
           </InputOTP>
         </div>
-        
+
         <p className="text-sm text-gray-500 mb-6">
           Não recebeu o código?{" "}
-          <button 
+          <button
             onClick={handleResendCode}
             className="text-black font-bold hover:underline disabled:opacity-50"
-            disabled={!canResend && !!lastSentTime}
+            disabled={isLoading || (!canResend && !!lastSentTime)}
             aria-label="Reenviar código de verificação"
           >
-            {canResend ? "Reenviar código" : "Aguarde para reenviar"}
+            {isLoading && !canResend ? "Enviando..." : (canResend ? "Reenviar código" : "Aguarde 5 min para reenviar")}
           </button>
         </p>
-    
+
         {attempts > 0 && (
           <p className="text-sm text-red-500 mb-4">
             Código incorreto!
           </p>
         )}
-        
-        <Button 
+
+        <Button
           className="w-300px bg-[#90EE90] hover:bg-[#90EE90] text-white disabled:opacity-50"
           onClick={handleValidate}
-          disabled={isLoading || value.length < 4 || attempts >= 3}
-          aria-label="Validar código de SMS"
+          disabled={isLoading || value.length < 6 || attempts >= 3}
+          aria-label="Validar código de telefone"
         >
           {isLoading ? "Validando..." : "Validar Telefone"}
         </Button>
-        
+
         <div className="flex justify-center mt-4 space-x-2">
           <div className="w-2 h-2 rounded-full bg-[#90EE90]"></div>
-          <div className="w-2 h-2 rounded-full bg-[#90EE90]"></div>
+          <div className="w-2 h-2 rounded-full bg-gray-300"></div>
         </div>
       </div>
     </div>
