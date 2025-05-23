@@ -36,7 +36,7 @@ type FormData = yup.InferType<typeof schema>;
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  // const [captchaVerified, setCaptchaVerified] = useState<string | null>(null);
+  const [captchaVerified, setCaptchaVerified] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -53,43 +53,59 @@ const Login = () => {
   };
 
   const onSubmit = async (data: FormData) => {
-    // if (!captchaVerified) {
-    //   setErrorMessage('Por favor, complete o CAPTCHA');
-    //   return;
-    // }
+    if (!captchaVerified) {
+      setErrorMessage('Por favor, complete o CAPTCHA');
+      return;
+    }
 
     setLoading(true);
     try {
       const response = await api.post('/user/login', {
         email: data.email,
         senha: data.password,
-        // captcha: captchaVerified
-      });    
-
+        captcha: captchaVerified
+      });
+    
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', data.email);
       } else {
         localStorage.removeItem('rememberedEmail');
       }
-
+    
       sessionStorage.setItem('token', response.data.token);
-      
-      // Redirecionar com replace para evitar voltar para login
+        
       navigate('/qualificacao', { replace: true });
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        setErrorMessage(error.response?.data?.message || 'E-mail ou senha incorretos');
+        const statusCode = error.response?.status;
+        const errorMessageFromApi = error.response?.data?.message;
+    
+        if (statusCode === 401) {
+          if (errorMessageFromApi === 'Usuário ainda não autenticado por e-mail') {
+            setErrorMessage('Por favor, valide seu e-mail para prosseguir.');
+            navigate('/verificacao-email')
+          } else if (errorMessageFromApi === 'Usuário ainda não autenticado por sms') {
+            setErrorMessage('Por favor, valide seu número de telefone via SMS.');
+            navigate('/verificacao-sms')
+          } else {
+            setErrorMessage('E-mail ou senha incorretos.');
+          }
+        } else if (errorMessageFromApi) {
+          setErrorMessage(errorMessageFromApi);
+        } else {
+          setErrorMessage('Ocorreu um erro na comunicação com o servidor.');
+        }
       } else {
-        setErrorMessage('Erro desconhecido');
+        setErrorMessage('Erro desconhecido. Por favor, tente novamente mais tarde.');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // const handleGovBrLogin = () => {
-  //   window.location.href = 'https://sso.acesso.gov.br/login';
-  // };
+  const handleGovBrLogin = () => {
+    window.location.href = 'https://sso.acesso.gov.br/login';
+  };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -181,13 +197,13 @@ const Login = () => {
               </div>
             </div>
                         
-            {/* <ReCAPTCHA
+            <ReCAPTCHA
               sitekey="6LegOy8rAAAAAN0nYjp8E_Jf1tOtxAXIoG4Bsj6C"
               onChange={(token) => setCaptchaVerified(token)}
               onExpired={() => setCaptchaVerified(null)}
               size="normal"
               theme="light"
-            /> */}
+            />
 
             <Button 
               type="submit"

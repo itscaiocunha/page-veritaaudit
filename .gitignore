@@ -25,3 +25,6 @@ dist-ssr
 
 # Accessibility Reports
 veritaaudit.vercel.app_2025-04-19_10-28-53.report.html
+
+# DotEnv
+.env
