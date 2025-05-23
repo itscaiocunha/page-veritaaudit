@@ -103,13 +103,13 @@ const Cadastro = () => {
         }
 
         // A lógica para o telefone/celular já estava correta, mas vale revisar para clareza
-        if (response.data.telefone) {
-          localStorage.setItem('userTelefone', response.data.telefone);
-        } else if (response.data.celular) {
-            localStorage.setItem('userTelefone', response.data.celular);
-        } else {
-            localStorage.setItem('userTelefone', data.telefone.replace(/\D/g, ''));
-        }
+        if (response.data.telefone) {
+          localStorage.setItem('userTelefone', response.data.telefone);
+        } else if (response.data.celular) { 
+          localStorage.setItem('userTelefone', response.data.celular);
+        } else {
+          localStorage.setItem('userTelefone', data.telefone.replace(/\D/g, ''));
+        }
 
         setTimeout(() => navigate('/verificacao-email'), 2000);
       } else {

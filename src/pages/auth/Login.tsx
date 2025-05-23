@@ -36,7 +36,7 @@ type FormData = yup.InferType<typeof schema>;
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [captchaVerified, setCaptchaVerified] = useState<string | null>(null);
+  // const [captchaVerified, setCaptchaVerified] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -53,17 +53,17 @@ const Login = () => {
   };
 
   const onSubmit = async (data: FormData) => {
-    if (!captchaVerified) {
-      setErrorMessage('Por favor, complete o CAPTCHA');
-      return;
-    }
+    // if (!captchaVerified) {
+    //   setErrorMessage('Por favor, complete o CAPTCHA');
+    //   return;
+    // }
 
     setLoading(true);
     try {
       const response = await api.post('/user/login', {
         email: data.email,
         senha: data.password,
-        captcha: captchaVerified
+        // captcha: captchaVerified
       });
     
       if (rememberMe) {
@@ -197,13 +197,13 @@ const Login = () => {
               </div>
             </div>
                         
-            <ReCAPTCHA
+            {/* <ReCAPTCHA
               sitekey="6LegOy8rAAAAAN0nYjp8E_Jf1tOtxAXIoG4Bsj6C"
               onChange={(token) => setCaptchaVerified(token)}
               onExpired={() => setCaptchaVerified(null)}
               size="normal"
               theme="light"
-            />
+            /> */}
 
             <Button 
               type="submit"
