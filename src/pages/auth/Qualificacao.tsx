@@ -11,17 +11,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useNavigate } from 'react-router-dom'; // Keep this import
-import api from "@/lib/axios";
-import axios from "axios";
+import { useNavigate } from 'react-router-dom';
+import axios from "axios"; // Keep axios for direct use
 
-// Define the Titulo type
+// Define the type for a single titulation entry
 type Titulo = {
-  tipo: string; // Este é o valor do Select (e.g., "Graduação")
+  tipo: string;
   curso: string;
   instituicao: string;
-  dataConclusao: string; // Formato YYYY-MM-DD
+  dataConclusao: string;
   expanded: boolean;
+};
+
+// Define the type for a file entry, including its description
+type FileEntry = {
+  file: File | null;
+  description: string;
 };
 
 // Define the available titulation types
@@ -33,16 +38,18 @@ const tiposTitulacao = [
   "DOUTORADO",
 ];
 
-// FileDropzone component (UNCOMMENTED AND PROPERLY DEFINED)
+// FileDropzone component for handling file uploads with optional description
 const FileDropzone = ({
   onFileAccepted,
-  file,
+  fileData, // Now expects a FileEntry object
   onRemove,
+  onDescriptionChange, // New prop for description changes
   type
 }: {
   onFileAccepted: (file: File) => void,
-  file: File | null,
+  fileData: FileEntry, // Pass the entire file entry object
   onRemove: () => void,
+  onDescriptionChange?: (description: string) => void, // Optional for curriculum
   type: 'curriculo' | 'extra'
 }) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -64,21 +71,32 @@ const FileDropzone = ({
         ${isDragActive ? 'border-green-500 bg-green-50' : 'border-gray-300'} hover:bg-gray-50`}
     >
       <input {...getInputProps()} />
-      {file ? (
-        <div className="flex items-center gap-2 w-full">
-          <FileText className="h-5 w-5 text-gray-500" />
-          <span className="truncate flex-1">{file.name}</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-            className="text-red-500 hover:text-red-700"
-          >
-            <Trash2 className="h-5 w-5" />
-          </Button>
+      {fileData.file ? (
+        <div className="flex flex-col gap-2 w-full">
+          <div className="flex items-center gap-2 w-full">
+            <FileText className="h-5 w-5 text-gray-500" />
+            <span className="truncate flex-1">{fileData.file.name}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent dropzone click when removing
+                onRemove();
+              }}
+              className="text-red-500 hover:text-red-700"
+            >
+              <Trash2 className="h-5 w-5" />
+            </Button>
+          </div>
+          {type === 'extra' && onDescriptionChange && ( // Only for 'extra' type and if handler is provided
+            <Input
+              placeholder="Descrição do certificado*"
+              value={fileData.description}
+              onChange={(e) => onDescriptionChange(e.target.value)}
+              className="mt-2 py-4"
+              onClick={(e) => e.stopPropagation()} // Prevent dropzone click when typing
+            />
+          )}
         </div>
       ) : (
         <>
@@ -95,7 +113,7 @@ const FileDropzone = ({
   );
 };
 
-// RequiredField component
+// RequiredField component to indicate mandatory fields
 const RequiredField = ({ children }: { children: React.ReactNode }) => (
   <div className="flex items-center gap-1">
     {children}
@@ -103,32 +121,38 @@ const RequiredField = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-// LoadingSpinner component
+// LoadingSpinner component for visual feedback during submission
 const LoadingSpinner = () => (
   <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
 );
 
-// Qualificacao component
+// Main Qualificacao component
 const Qualificacao = () => {
-  const navigate = useNavigate(); // useNavigate hook moved inside the component
+  const navigate = useNavigate();
 
+  // State for titulations (degrees/qualifications)
   const [titulos, setTitulos] = useState<Titulo[]>([{
     tipo: "",
     curso: "",
     instituicao: "",
     dataConclusao: "",
-    expanded: true
+    expanded: true // Start with the first title expanded
   }]);
-  const [curriculos, setCurriculos] = useState<Array<File | null>>([]);
-  const [extras, setExtras] = useState<Array<File | null>>([]);
+  // State for curriculum files
+  const [curriculos, setCurriculos] = useState<FileEntry[]>([]);
+  // State for extra certificate files, now including description
+  const [extras, setExtras] = useState<FileEntry[]>([]);
+  // State to manage submission loading status
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Effect to load titles from localStorage on component mount
   useEffect(() => {
     const storedTitulos = localStorage.getItem('userTitulos');
 
     if (storedTitulos) {
       try {
         const parsedTitulos = JSON.parse(storedTitulos);
+        // Map stored titles, ensuring they are collapsed initially
         setTitulos(parsedTitulos.map((t: any) => ({ ...t, expanded: false })));
       } catch (e) {
         console.error("Erro ao parsear títulos do localStorage:", e);
@@ -150,32 +174,32 @@ const Qualificacao = () => {
   // Validates if the date is not in the future
   const validarData = (data: string): boolean => {
     const hoje = new Date();
-    const dataSelecionada = new Date(data + 'T00:00:00');
-    hoje.setHours(0, 0, 0, 0);
+    const dataSelecionada = new Date(data + 'T00:00:00'); // Ensure comparison is date-only
+    hoje.setHours(0, 0, 0, 0); // Reset hours for accurate date comparison
 
     return dataSelecionada <= hoje;
   };
 
-  // Adds a new titulation field
+  // Adds a new titulation field to the state
   const adicionarTitulo = () => {
     const novoTitulo: Titulo = {
       tipo: "",
       curso: "",
       instituicao: "",
       dataConclusao: "",
-      expanded: true
+      expanded: true // New title starts expanded
     };
     setTitulos([...titulos, novoTitulo]);
   };
 
-  // Toggles the expansion of a titulation field
+  // Toggles the expanded/collapsed state of a titulation field
   const toggleExpandirTitulo = (index: number) => {
     const novosTitulos = [...titulos];
     novosTitulos[index].expanded = !novosTitulos[index].expanded;
     setTitulos(novosTitulos);
   };
 
-  // Updates a specific field of a titulation
+  // Updates a specific field of a titulation entry
   const atualizarTitulo = (index: number, campo: keyof Titulo, valor: string) => {
     const novosTitulos = [...titulos];
     novosTitulos[index] = {
@@ -185,38 +209,38 @@ const Qualificacao = () => {
     setTitulos(novosTitulos);
   };
 
-  // Removes a titulation field
+  // Removes a titulation field from the state
   const removerTitulo = (index: number) => {
     const novos = titulos.filter((_, i) => i !== index);
     setTitulos(novos);
     toast.success("Título removido!");
   };
 
-  // Adds a new curriculum file input
+  // Adds a new curriculum file input slot
   const adicionarCurriculo = () => {
-    setCurriculos([...curriculos, null]);
+    setCurriculos([...curriculos, { file: null, description: '' }]); // Initialize with null file and empty description
   };
 
-  // Adds a new extra certificate file input
+  // Adds a new extra certificate file input slot
   const adicionarExtra = () => {
-    setExtras([...extras, null]);
+    setExtras([...extras, { file: null, description: '' }]); // Initialize with null file and empty description
   };
 
-  // Removes a curriculum file input
+  // Removes a curriculum file input slot
   const removerCurriculo = (index: number) => {
     const novos = curriculos.filter((_, i) => i !== index);
     setCurriculos(novos);
     toast.success("Currículo removido!");
   };
 
-  // Removes an extra certificate file input
+  // Removes an extra certificate file input slot
   const removerExtra = (index: number) => {
     const novos = extras.filter((_, i) => i !== index);
     setExtras(novos);
     toast.success("Certificado removido!");
   };
 
-  // Handles the final submission of the form
+  // Handles the final submission of the form data
   const handleFinalizar = async () => {
     setIsSubmitting(true);
 
@@ -263,13 +287,15 @@ const Qualificacao = () => {
         return;
       }
 
-      if (curriculos.some(file => file === null)) {
+      // Check if all curriculum slots have a file
+      if (curriculos.some(entry => entry.file === null)) {
         toast.error("Por favor, adicione todos os currículos nos campos disponíveis.");
         setIsSubmitting(false);
         return;
       }
 
-      if (extras.some(file => file === null)) {
+      // Check if all extra certificate slots have a file
+      if (extras.some(entry => entry.file === null)) {
         toast.error("Por favor, adicione todos os certificados nos campos disponíveis.");
         setIsSubmitting(false);
         return;
@@ -278,18 +304,28 @@ const Qualificacao = () => {
       // --- Prepare FormData for submission ---
       const formData = new FormData();
 
-      curriculos.forEach(file => {
-        if (file) {
-          formData.append('curriculo', file);
+      // Append curriculum files
+      curriculos.forEach(entry => {
+        if (entry.file) {
+          formData.append('curriculo', entry.file);
         }
       });
 
-      extras.forEach(file => {
-        if (file) {
-          formData.append('certificados', file);
+      // Append extra certificate files and their descriptions
+      const certificadosDescriptions: string[] = [];
+      extras.forEach(entry => {
+        if (entry.file) {
+          formData.append('certificados', entry.file);
+          certificadosDescriptions.push(entry.description);
         }
       });
+      // Append descriptions as a JSON string
+      formData.append('certificados_descriptions', new Blob(
+        [JSON.stringify(certificadosDescriptions)],
+        { type: 'application/json' }
+      ));
 
+      // Format titulations data for the API
       const titulosFormatadosParaAPI = titulos.map(t => ({
         titulacaoType: t.tipo,
         instituicao: t.instituicao,
@@ -297,23 +333,26 @@ const Qualificacao = () => {
         dataConclusao: t.dataConclusao
       }));
 
+      // Append titulations data as a JSON blob
       formData.append('data', new Blob(
         [JSON.stringify({ titulacoes: titulosFormatadosParaAPI })],
         { type: 'application/json' }
       ));
-      console.log([...formData.entries()])
 
-      // --- Send to API ---
-      const response = await api.post('/gestor/qualification', formData, {
+      // Log FormData entries for debugging (optional)
+      console.log([...formData.entries()]);
+
+      // --- Send to API using axios directly ---
+      const response = await axios.post('/gestor/qualification', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+          'Content-Type': 'multipart/form-data', // Important for FormData
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}` // Include authorization token
         }
       });
 
       if (response.status === 201) {
         toast.success("Qualificações salvas com sucesso!");
-        navigate('/dashboard');
+        navigate('/dashboard'); // Navigate to dashboard on success
       } else {
         toast.info("As qualificações foram enviadas, mas houve uma resposta inesperada.");
       }
@@ -328,26 +367,26 @@ const Qualificacao = () => {
         console.error("Erro desconhecido:", error);
       }
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Reset submission state
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center py-8 px-4 bg-gray-50">
+    <div className="min-h-screen flex flex-col items-center py-8 px-4 bg-gray-50 font-inter">
       <h1 className="text-4xl font-bold mb-8">VERITA AUDIT</h1>
 
       <div className="w-full max-w-4xl rounded-lg p-8 bg-white shadow-md">
         <h2 className="text-2xl font-semibold text-center mb-6">Qualificações Profissionais</h2>
 
         <div className="space-y-6 mb-6">
-          {/* Seção de Titulação */}
+          {/* Section for Titulation */}
           <div className="space-y-4">
             <label className="block text-lg font-semibold mb-2">
               <RequiredField>Titulação</RequiredField>
             </label>
             <Button
               variant="outline"
-              className="bg-[#90EE90] hover:bg-[#90EE90] text-white font-bold flex items-center gap-2"
+              className="bg-[#90EE90] hover:bg-[#90EE90] text-white font-bold flex items-center gap-2 rounded-md"
               onClick={adicionarTitulo}
             >
               <Plus className="h-4 w-4" /> Adicionar Título
@@ -380,7 +419,7 @@ const Qualificacao = () => {
                           value={titulo.tipo}
                           onValueChange={(value) => atualizarTitulo(index, 'tipo', value)}
                         >
-                          <SelectTrigger className="py-4">
+                          <SelectTrigger className="py-4 rounded-md">
                             <SelectValue placeholder="Selecione o tipo" />
                           </SelectTrigger>
                           <SelectContent>
@@ -400,7 +439,7 @@ const Qualificacao = () => {
                           value={titulo.instituicao}
                           onChange={(e) => atualizarTitulo(index, 'instituicao', e.target.value)}
                           placeholder="Nome da instituição"
-                          className="py-4"
+                          className="py-4 rounded-md"
                         />
                       </div>
                     </div>
@@ -414,7 +453,7 @@ const Qualificacao = () => {
                           value={titulo.curso}
                           onChange={(e) => atualizarTitulo(index, 'curso', e.target.value)}
                           placeholder="Ex: Direito, Engenharia Civil"
-                          className="py-4"
+                          className="py-4 rounded-md"
                         />
                       </div>
                       <div className="space-y-2">
@@ -425,7 +464,7 @@ const Qualificacao = () => {
                           type="date"
                           value={titulo.dataConclusao}
                           onChange={(e) => atualizarTitulo(index, 'dataConclusao', e.target.value)}
-                          className="py-4"
+                          className="py-4 rounded-md"
                         />
                       </div>
                     </div>
@@ -435,7 +474,7 @@ const Qualificacao = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => removerTitulo(index)}
-                        className="text-red-500 hover:text-red-700"
+                        className="text-red-500 hover:text-red-700 rounded-md"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Remover Título
@@ -447,22 +486,22 @@ const Qualificacao = () => {
             ))}
           </div>
 
-          {/* Seção de Currículos */}
+          {/* Section for Curricula */}
           <div className="space-y-4">
             <label className="block text-lg font-semibold mb-2">
               <RequiredField>Currículos (PDF)</RequiredField>
             </label>
             <Button
               variant="outline"
-              className="bg-[#90EE90] hover:bg-[#90EE90] text-white font-bold flex items-center gap-2 mb-2"
+              className="bg-[#90EE90] hover:bg-[#90EE90] text-white font-bold flex items-center gap-2 mb-2 rounded-md"
               onClick={adicionarCurriculo}
             >
               <Plus className="h-4 w-4" /> Adicionar Currículo
             </Button>
 
-            {curriculos.map((file, index) => (
+            {curriculos.map((fileEntry, index) => (
               <div key={`curriculo-${index}`} className="mt-2">
-                <FileDropzone // FileDropzone is now correctly used here
+                <FileDropzone
                   onFileAccepted={(file) => {
                     if (!validarPDF(file)) {
                       toast.error("Por favor, selecione um arquivo PDF.");
@@ -473,11 +512,11 @@ const Qualificacao = () => {
                       return;
                     }
                     const novos = [...curriculos];
-                    novos[index] = file;
+                    novos[index] = { ...novos[index], file: file }; // Update only the file
                     setCurriculos(novos);
                     toast.success(`Currículo ${file.name} adicionado.`);
                   }}
-                  file={file}
+                  fileData={fileEntry} // Pass the entire file entry object
                   onRemove={() => removerCurriculo(index)}
                   type="curriculo"
                 />
@@ -485,22 +524,22 @@ const Qualificacao = () => {
             ))}
           </div>
 
-          {/* Seção de Certificados */}
+          {/* Section for Certificates */}
           <div className="space-y-4">
             <label className="block text-lg font-semibold mb-2">
               <RequiredField>Certificados (PDF)</RequiredField>
             </label>
             <Button
               variant="outline"
-              className="bg-[#90EE90] hover:bg-[#90EE90] text-white font-bold flex items-center gap-2 mb-2"
+              className="bg-[#90EE90] hover:bg-[#90EE90] text-white font-bold flex items-center gap-2 mb-2 rounded-md"
               onClick={adicionarExtra}
             >
               <Plus className="h-4 w-4" /> Adicionar Certificado
             </Button>
 
-            {extras.map((file, index) => (
+            {extras.map((fileEntry, index) => (
               <div key={`certificado-${index}`} className="mt-2">
-                <FileDropzone // FileDropzone is now correctly used here
+                <FileDropzone
                   onFileAccepted={(file) => {
                     if (!validarPDF(file)) {
                       toast.error("Por favor, selecione um arquivo PDF.");
@@ -511,12 +550,17 @@ const Qualificacao = () => {
                       return;
                     }
                     const novos = [...extras];
-                    novos[index] = file;
+                    novos[index] = { ...novos[index], file: file }; // Update only the file
                     setExtras(novos);
                     toast.success(`Certificado ${file.name} adicionado.`);
                   }}
-                  file={file}
+                  fileData={fileEntry} // Pass the entire file entry object
                   onRemove={() => removerExtra(index)}
+                  onDescriptionChange={(description) => { // New handler for description
+                    const novos = [...extras];
+                    novos[index] = { ...novos[index], description: description };
+                    setExtras(novos);
+                  }}
                   type="extra"
                 />
               </div>
@@ -526,7 +570,7 @@ const Qualificacao = () => {
 
         <div className="flex justify-end mt-8">
           <Button
-            className="bg-[#90EE90] hover:bg-[#90EE90] text-white font-bold px-8 py-6 text-lg"
+            className="bg-[#90EE90] hover:bg-[#90EE90] text-white font-bold px-8 py-6 text-lg rounded-md"
             onClick={handleFinalizar}
             disabled={isSubmitting}
           >

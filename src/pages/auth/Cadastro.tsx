@@ -13,15 +13,18 @@ import { toast } from "react-toastify";
 
 // Schema de validação
 const schema = yup.object({
+  foto: yup.string().required("Foto é obrigatíorio"),
   nome: yup.string().required("Nome completo é obrigatório"),
   cpf: yup.string().required("CPF é obrigatório").matches(/^[0-9]{3}\.[0-9]{3}\.[0-9]{3}-[0-9]{2}$/, "CPF inválido"),
   telefone: yup.string().required("Telefone é obrigatório").matches(/^\(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido"),
-  emailPrincipal: yup.string().required("E-mail principal é obrigatório").email("E-mail inválido").test("no-gmail", "Permitido apenas domínios próprios", value => !value?.toLowerCase().endsWith('@gmail.com')),
+  emailPrincipal: yup.string().email("E-mail principal inválido").notRequired(),
   emailSecundario: yup.string().email("E-mail secundário inválido").notRequired(),
   password: yup.string().required("Senha é obrigatória").min(8, "Mínimo de 8 caracteres").matches(/[A-Z]/, "Pelo menos 1 letra maiúscula").matches(/[a-z]/, "Pelo menos 1 letra minúscula").matches(/[0-9]/, "Pelo menos 1 número").matches(/[!@#$%^&*(),.?":{}|<>]/, "Pelo menos 1 caractere especial"),
   cnpj: yup.string().required("CNPJ da Empresa é obrigatório").matches(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, "CNPJ inválido"),
+  tipoEmpresa: yup.string().required("Escolha um tipo de empresa"),
   profissao: yup.string().required("Profissão é obrigatória"),
   curriculoLattes: yup.string().url("Informe uma URL válida para o currículo Lattes").notRequired(),
+  linkedin:  yup.string().url("Informe uma URL válida para o linkedIn").notRequired(),
   cep: yup.string().required("CEP é obrigatório").matches(/^\d{5}-\d{3}$/, "CEP inválido"),
   numero: yup.string().required("Número é obrigatório"),
   logradouro: yup.string().required("Logradouro é obrigatório"),
@@ -56,7 +59,7 @@ const Cadastro = () => {
   };
 
   const handleNext = async () => {
-    const valid = await trigger(["nome", "cpf", "telefone", "emailPrincipal", "emailSecundario", "password"]);
+    const valid = await trigger(["foto", "nome", "cpf", "telefone", "emailPrincipal", "emailSecundario", "password"]);
     if (valid) setStep(2);
   };
 
@@ -68,6 +71,7 @@ const Cadastro = () => {
   const onSubmit = async (data: FormData) => {
     try {
       const dadosParaEnviar = {
+        foto: data.foto,
         nome: data.nome,
         cpf: data.cpf.replace(/\D/g, ''),
         celular: data.telefone.replace(/\D/g, ''),
@@ -89,18 +93,17 @@ const Cadastro = () => {
       console.log("Dados que serão enviados para a API:", dadosParaEnviar);
 
       const response = await api.post('/gestor', dadosParaEnviar);
-
-      // Verifique se o status é 200 (ou 201) e se os dados esperados estão na resposta
-      if (response.status === 200 || response.status === 201) {
-        toast.success("Cadastrado com sucesso!");
-        reset();
+      
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Cadastrado com sucesso!");
+        reset();
 
         // **CORREÇÃO AQUI para o e-mail:**
-        if (response.data.emailPrincipal) { // <-- MUDADO DE response.data.email PARA response.data.emailPrincipal
-          localStorage.setItem('userEmail', response.data.emailPrincipal);
-        } else {
-          localStorage.setItem('userEmail', data.emailPrincipal);
-        }
+      if (response.data.emailPrincipal) { 
+        localStorage.setItem('userEmail', response.data.emailPrincipal);
+      } else {
+        localStorage.setItem('userEmail', data.emailPrincipal);
+      }
 
         // A lógica para o telefone/celular já estava correta, mas vale revisar para clareza
         if (response.data.telefone) {
@@ -111,10 +114,10 @@ const Cadastro = () => {
           localStorage.setItem('userTelefone', data.telefone.replace(/\D/g, ''));
         }
 
-        setTimeout(() => navigate('/verificacao-email'), 2000);
-      } else {
-        toast.info("Cadastro realizado, mas com um status inesperado. Verifique.");
-      }
+        setTimeout(() => navigate('/verificacao-email'), 2000);
+      } else {
+          toast.info("Cadastro realizado, mas com um status inesperado. Verifique.");
+        }
 
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -144,8 +147,8 @@ const Cadastro = () => {
           setValue("complemento", "");
           return;
         }
-        setValue("logradouro", res.data.logradouro || "", { shouldValidate: true });
-        setValue("bairro", res.data.bairro || "", { shouldValidate: true });
+        setValue("logradouro", res.data.logradouro || "CEP ÚNICO", { shouldValidate: true });
+        setValue("bairro", res.data.bairro || "CEP ÚNICO", { shouldValidate: true });
         setValue("cidade", res.data.localidade || "", { shouldValidate: true });
         setValue("uf", res.data.uf || "", { shouldValidate: true });
         setValue("complemento", res.data.complemento || "", { shouldValidate: true });
@@ -172,6 +175,34 @@ const Cadastro = () => {
 
           {step === 1 && (
             <>
+              <div className="flex flex-col items-center mb-4">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setValue("foto", reader.result as string, { shouldValidate: true });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="hidden"
+                  id="foto-upload"
+                />
+                <label htmlFor="foto-upload" className="cursor-pointer">
+                  <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden shadow-md hover:ring-2 hover:ring-[#90EE90] transition">
+                    {watch("foto") ? (
+                      <img src={watch("foto")} alt="Preview" className="object-cover w-full h-full" />
+                    ) : (
+                      <span className="text-gray-500 text-sm">Foto</span>
+                    )}
+                  </div>
+                </label>
+                {errors.foto && <p className="text-red-500 text-sm mt-2">{errors.foto.message}</p>}
+              </div>
               <Input placeholder="Nome completo*" className="py-6" {...register("nome")} />
               {errors.nome && <p className="text-red-500 text-sm">{errors.nome.message}</p>}
 
@@ -219,11 +250,38 @@ const Cadastro = () => {
               </InputMask>
               {errors.cnpj && <p className="text-red-500 text-sm">{errors.cnpj.message}</p>}
 
+              <div className="mb-4">
+              <select
+                {...register("tipoEmpresa")}
+                className="w-full py-4 px-4 rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#90EE90] focus:border-transparent"
+                defaultValue=""
+              >
+                <option value="" disabled>Tipo de Empresa*</option>
+                <option value="Patrocinadora">Patrocinadora</option>
+                <option value="CPO">CPO (Centro de Pesquisa Operacional)</option>
+                <option value="Laboratório">Laboratório</option>
+              </select>
+                {errors.tipoEmpresa && <p className="text-red-500 text-sm mt-1">{errors.tipoEmpresa.message}</p>}
+              </div>
+
               <Input placeholder="Profissão*" className="py-6" {...register("profissao")} />
               {errors.profissao && <p className="text-red-500 text-sm">{errors.profissao.message}</p>}
 
-              <Input type="url" placeholder="Link do Currículo Lattes (opcional)" className="py-6" {...register("curriculoLattes")} />
+              <Input
+                type="url"
+                placeholder="Link do Currículo Lattes (opcional)"
+                className="py-6"
+                {...register("curriculoLattes")}
+              />
               {errors.curriculoLattes && <p className="text-red-500 text-sm">{errors.curriculoLattes.message}</p>}
+
+              <Input
+                type="url"
+                placeholder="Link do LinkedIn (opcional)"
+                className="py-6"
+                {...register("linkedin")}
+              />
+              {errors.linkedin && <p className="text-red-500 text-sm">{errors.linkedin.message}</p>}
 
               <div className="flex justify-between gap-4">
                 <Button type="button" onClick={() => setStep(1)} className="w-full py-6 bg-gray-300 text-black hover:bg-gray-400">
@@ -235,6 +293,7 @@ const Cadastro = () => {
               </div>
             </>
           )}
+
           {step === 3 && (
             <>
               <InputMask mask="99999-999" value={watch("cep") || ""} onChange={handleCepChange}>
