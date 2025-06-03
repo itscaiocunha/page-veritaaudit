@@ -12,50 +12,61 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
-import axios from "axios"; // Keep axios for direct use
+import api from "@/lib/axios"; // CONFIRA ESTE CAMINHO
+import { isAxiosError } from "axios";
 
-// Define the type for a single titulation entry
+// Tipos
 type Titulo = {
   tipo: string;
   curso: string;
   instituicao: string;
+  capacitacao: string;
   dataConclusao: string;
   expanded: boolean;
 };
 
-// Define the type for a file entry, including its description
 type FileEntry = {
   file: File | null;
   description: string;
 };
 
-// Define the available titulation types
+type StoredTitulo = Omit<Titulo, 'expanded' | 'capacitacao'> & {
+  capacitacao?: string; // Para compatibilidade com localStorage antigo
+  expanded?: boolean;
+};
+
+// Constantes
 const tiposTitulacao = [
   "TECNICO",
   "GRADUACAO",
   "ESPECIALIZACAO",
   "MESTRADO",
   "DOUTORADO",
+  "POS_GRADUACAO",
 ];
 
-// FileDropzone component for handling file uploads with optional description
+const tiposCapacitacao = [
+  { value: "ETNICA", label: "Étnica" },
+  { value: "PRATICA", label: "Prática" },
+  { value: "ESPECIFICA", label: "Específica" },
+];
+
+// Componente FileDropzone
 const FileDropzone = ({
   onFileAccepted,
-  fileData, // Now expects a FileEntry object
+  fileData,
   onRemove,
-  onDescriptionChange, // New prop for description changes
+  onDescriptionChange,
   type
 }: {
   onFileAccepted: (file: File) => void,
-  fileData: FileEntry, // Pass the entire file entry object
+  fileData: FileEntry,
   onRemove: () => void,
-  onDescriptionChange?: (description: string) => void, // Optional for curriculum
+  onDescriptionChange?: (description: string) => void,
   type: 'curriculo' | 'extra'
 }) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: {
-      'application/pdf': ['.pdf']
-    },
+    accept: { 'application/pdf': ['.pdf'] },
     maxFiles: 1,
     onDrop: acceptedFiles => {
       if (acceptedFiles.length > 0) {
@@ -79,22 +90,19 @@ const FileDropzone = ({
             <Button
               variant="ghost"
               size="icon"
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent dropzone click when removing
-                onRemove();
-              }}
+              onClick={(e) => { e.stopPropagation(); onRemove(); }}
               className="text-red-500 hover:text-red-700"
             >
               <Trash2 className="h-5 w-5" />
             </Button>
           </div>
-          {type === 'extra' && onDescriptionChange && ( // Only for 'extra' type and if handler is provided
+          {type === 'extra' && onDescriptionChange && (
             <Input
               placeholder="Descrição do certificado*"
               value={fileData.description}
               onChange={(e) => onDescriptionChange(e.target.value)}
               className="mt-2 py-4"
-              onClick={(e) => e.stopPropagation()} // Prevent dropzone click when typing
+              onClick={(e) => e.stopPropagation()}
             />
           )}
         </div>
@@ -113,7 +121,7 @@ const FileDropzone = ({
   );
 };
 
-// RequiredField component to indicate mandatory fields
+// Componente RequiredField
 const RequiredField = ({ children }: { children: React.ReactNode }) => (
   <div className="flex items-center gap-1">
     {children}
@@ -121,363 +129,259 @@ const RequiredField = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-// LoadingSpinner component for visual feedback during submission
+// Componente LoadingSpinner
 const LoadingSpinner = () => (
   <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
 );
 
-// Main Qualificacao component
+// Componente Principal Qualificacao
 const Qualificacao = () => {
   const navigate = useNavigate();
 
-  // State for titulations (degrees/qualifications)
   const [titulos, setTitulos] = useState<Titulo[]>([{
-    tipo: "",
-    curso: "",
-    instituicao: "",
-    dataConclusao: "",
-    expanded: true // Start with the first title expanded
+    tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true,
   }]);
-  // State for curriculum files
   const [curriculos, setCurriculos] = useState<FileEntry[]>([]);
-  // State for extra certificate files, now including description
   const [extras, setExtras] = useState<FileEntry[]>([]);
-  // State to manage submission loading status
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Effect to load titles from localStorage on component mount
   useEffect(() => {
-    const storedTitulos = localStorage.getItem('userTitulos');
-
-    if (storedTitulos) {
+    const storedTitulosRaw = localStorage.getItem('userTitulos');
+    if (storedTitulosRaw) {
       try {
-        const parsedTitulos = JSON.parse(storedTitulos);
-        // Map stored titles, ensuring they are collapsed initially
-        setTitulos(parsedTitulos.map((t: any) => ({ ...t, expanded: false })));
+        const parsedStoredTitulos: StoredTitulo[] = JSON.parse(storedTitulosRaw);
+        if (Array.isArray(parsedStoredTitulos) && parsedStoredTitulos.length > 0) {
+          setTitulos(parsedStoredTitulos.map(t => ({
+            tipo: t.tipo || "",
+            curso: t.curso || "",
+            instituicao: t.instituicao || "",
+            capacitacao: t.capacitacao || "", 
+            dataConclusao: t.dataConclusao || "",
+            expanded: false, 
+          })));
+        } else {
+          setTitulos([{ tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true }]);
+        }
       } catch (e) {
-        console.error("Erro ao parsear títulos do localStorage:", e);
+        console.error("Erro ao parsear títulos do localStorage ou formato inválido:", e);
+        setTitulos([{ tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true }]);
       }
+    } else {
+      setTitulos([{ tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true }]);
     }
   }, []);
 
-  // Validates if the file is a PDF
-  const validarPDF = (file: File): boolean => {
-    return file.type === "application/pdf";
-  };
+  const validarPDF = (file: File): boolean => file.type === "application/pdf";
+  const validarTamanhoArquivo = (file: File): boolean => (5 * 1024 * 1024) >= file.size;
 
-  // Validates the file size (max 5MB)
-  const validarTamanhoArquivo = (file: File): boolean => {
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    return file.size <= maxSize;
-  };
-
-  // Validates if the date is not in the future
   const validarData = (data: string): boolean => {
+    if (!data) return false;
     const hoje = new Date();
-    const dataSelecionada = new Date(data + 'T00:00:00'); // Ensure comparison is date-only
-    hoje.setHours(0, 0, 0, 0); // Reset hours for accurate date comparison
-
+    const dataSelecionada = new Date(data + 'T00:00:00Z'); 
+    hoje.setUTCHours(0, 0, 0, 0);
     return dataSelecionada <= hoje;
   };
 
-  // Adds a new titulation field to the state
   const adicionarTitulo = () => {
-    const novoTitulo: Titulo = {
-      tipo: "",
-      curso: "",
-      instituicao: "",
-      dataConclusao: "",
-      expanded: true // New title starts expanded
-    };
-    setTitulos([...titulos, novoTitulo]);
+    setTitulos(prev => [...prev, { tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true }]);
   };
 
-  // Toggles the expanded/collapsed state of a titulation field
   const toggleExpandirTitulo = (index: number) => {
-    const novosTitulos = [...titulos];
-    novosTitulos[index].expanded = !novosTitulos[index].expanded;
-    setTitulos(novosTitulos);
+    setTitulos(prev => prev.map((t, i) => i === index ? { ...t, expanded: !t.expanded } : t));
   };
 
-  // Updates a specific field of a titulation entry
-  const atualizarTitulo = (index: number, campo: keyof Titulo, valor: string) => {
-    const novosTitulos = [...titulos];
-    novosTitulos[index] = {
-      ...novosTitulos[index],
-      [campo]: valor
-    };
-    setTitulos(novosTitulos);
+  const atualizarTitulo = (index: number, campo: keyof Omit<Titulo, 'expanded'>, valor: string) => {
+    setTitulos(prev => prev.map((t, i) => i === index ? { ...t, [campo]: valor } : t));
   };
 
-  // Removes a titulation field from the state
   const removerTitulo = (index: number) => {
-    const novos = titulos.filter((_, i) => i !== index);
-    setTitulos(novos);
+    setTitulos(prev => prev.filter((_, i) => i !== index));
     toast.success("Título removido!");
   };
 
-  // Adds a new curriculum file input slot
-  const adicionarCurriculo = () => {
-    setCurriculos([...curriculos, { file: null, description: '' }]); // Initialize with null file and empty description
-  };
-
-  // Adds a new extra certificate file input slot
-  const adicionarExtra = () => {
-    setExtras([...extras, { file: null, description: '' }]); // Initialize with null file and empty description
-  };
-
-  // Removes a curriculum file input slot
+  const adicionarCurriculo = () => setCurriculos(prev => [...prev, { file: null, description: '' }]);
+  const adicionarExtra = () => setExtras(prev => [...prev, { file: null, description: '' }]);
+  
   const removerCurriculo = (index: number) => {
-    const novos = curriculos.filter((_, i) => i !== index);
-    setCurriculos(novos);
+    setCurriculos(prev => prev.filter((_, i) => i !== index));
     toast.success("Currículo removido!");
   };
-
-  // Removes an extra certificate file input slot
   const removerExtra = (index: number) => {
-    const novos = extras.filter((_, i) => i !== index);
-    setExtras(novos);
+    setExtras(prev => prev.filter((_, i) => i !== index));
     toast.success("Certificado removido!");
   };
 
-  // Handles the final submission of the form data
   const handleFinalizar = async () => {
     setIsSubmitting(true);
 
     try {
-      // --- Validações ---
+      // Validações de Títulos
       if (titulos.length === 0) {
-        toast.error("Por favor, adicione pelo menos um título.");
-        setIsSubmitting(false);
-        return;
+        toast.error("Por favor, adicione pelo menos um título de qualificação.");
+        setIsSubmitting(false); return;
+      }
+      for (const [index, titulo] of titulos.entries()) {
+        if (!titulo.tipo) { toast.error(`O tipo é obrigatório para o título ${index + 1}.`); setIsSubmitting(false); return; }
+        if (!titulo.capacitacao) { toast.error(`A capacitação é obrigatória para o título ${index + 1}.`); setIsSubmitting(false); return; }
+        if (!titulo.instituicao.trim()) { toast.error(`A instituição é obrigatória para o título ${index + 1}.`); setIsSubmitting(false); return; }
+        if (!titulo.curso.trim()) { toast.error(`O nome do curso é obrigatório para o título ${index + 1}.`); setIsSubmitting(false); return; }
+        if (!titulo.dataConclusao) { toast.error(`A data de conclusão é obrigatória para o título ${index + 1}.`); setIsSubmitting(false); return; }
+        if (!validarData(titulo.dataConclusao)) { toast.error(`A data de conclusão do título ${index + 1} não pode ser futura.`); setIsSubmitting(false); return; }
       }
 
-      for (const titulo of titulos) {
-        if (!titulo.tipo) {
-          toast.error("O tipo de titulação é obrigatório.");
-          setIsSubmitting(false);
-          return;
-        }
-        if (!titulo.instituicao) {
-          toast.error("A instituição do título é obrigatória.");
-          setIsSubmitting(false);
-          return;
-        }
-        if (!titulo.curso) {
-          toast.error("O nome do curso é obrigatório.");
-          setIsSubmitting(false);
-          return;
-        }
-        if (!titulo.dataConclusao) {
-          toast.error("A data de conclusão do título é obrigatória.");
-          setIsSubmitting(false);
-          return;
-        }
-
-        if (!validarData(titulo.dataConclusao)) {
-          toast.error("A data de conclusão não pode ser futura.");
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
+      // Validações de Currículos
       if (curriculos.length === 0) {
-        toast.error("É obrigatório enviar pelo menos um currículo.");
-        setIsSubmitting(false);
-        return;
+        toast.error("É obrigatório adicionar pelo menos um currículo.");
+        setIsSubmitting(false); return;
+      }
+      const curriculoSlotVazio = curriculos.findIndex(entry => entry.file === null);
+      if (curriculoSlotVazio !== -1) {
+        toast.error(`Por favor, adicione o arquivo para o currículo ${curriculoSlotVazio + 1}.`);
+        setIsSubmitting(false); return;
       }
 
-      // Check if all curriculum slots have a file
-      if (curriculos.some(entry => entry.file === null)) {
-        toast.error("Por favor, adicione todos os currículos nos campos disponíveis.");
-        setIsSubmitting(false);
-        return;
+      // Validações de Certificados Extras
+      for (const [index, extra] of extras.entries()) {
+        if (!extra.file) { toast.error(`Por favor, adicione o arquivo para o certificado extra ${index + 1}.`); setIsSubmitting(false); return; }
+        if (!extra.description.trim()) { toast.error(`A descrição é obrigatória para o certificado extra ${index + 1}.`); setIsSubmitting(false); return; }
       }
 
-      // Check if all extra certificate slots have a file
-      if (extras.some(entry => entry.file === null)) {
-        toast.error("Por favor, adicione todos os certificados nos campos disponíveis.");
-        setIsSubmitting(false);
-        return;
-      }
-
-      // --- Prepare FormData for submission ---
       const formData = new FormData();
+      curriculos.forEach(entry => entry.file && formData.append('curriculo', entry.file));
+      extras.forEach(entry => entry.file && formData.append('certificados', entry.file));
 
-      // Append curriculum files
-      curriculos.forEach(entry => {
-        if (entry.file) {
-          formData.append('curriculo', entry.file);
-        }
-      });
-
-      // Append extra certificate files and their descriptions
-      const certificadosDescriptions: string[] = [];
-      extras.forEach(entry => {
-        if (entry.file) {
-          formData.append('certificados', entry.file);
-          certificadosDescriptions.push(entry.description);
-        }
-      });
-      // Append descriptions as a JSON string
-      formData.append('certificados_descriptions', new Blob(
-        [JSON.stringify(certificadosDescriptions)],
-        { type: 'application/json' }
-      ));
-
-      // Format titulations data for the API
-      const titulosFormatadosParaAPI = titulos.map(t => ({
+      const titulosParaAPI = titulos.map(t => ({
         titulacaoType: t.tipo,
         instituicao: t.instituicao,
         curso: t.curso,
-        dataConclusao: t.dataConclusao
+        dataConclusao: t.dataConclusao,
+        capacitacaoType: t.capacitacao
       }));
 
-      // Append titulations data as a JSON blob
-      formData.append('data', new Blob(
-        [JSON.stringify({ titulacoes: titulosFormatadosParaAPI })],
-        { type: 'application/json' }
-      ));
+      const certificadosDetailsParaAPI = extras.map(entry => ({
+        descricao: entry.description
+      }));
 
-      // Log FormData entries for debugging (optional)
-      console.log([...formData.entries()]);
+      const jsonDataPayload = { titulacao: titulosParaAPI, certificadosDetails: certificadosDetailsParaAPI };
+      
+      console.log("Payload JSON a ser enviado no campo 'data':", JSON.stringify(jsonDataPayload, null, 2));
+      // Adicionar um nome de arquivo ao Blob pode ajudar alguns backends, embora geralmente não seja necessário para JSON.
+      formData.append('data', new Blob([JSON.stringify(jsonDataPayload)], { type: 'application/json' }), 'payload.json'); 
+      
+      const token = sessionStorage.getItem('token');
+      if (!token) {
+        toast.error("Sessão expirada ou token não encontrado. Faça login novamente.");
+        setIsSubmitting(false);
+        navigate('/login');
+        return;
+      }
 
-      // --- Send to API using axios directly ---
-      const response = await axios.post('/gestor/qualification', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data', // Important for FormData
-          'Authorization': `Bearer ${sessionStorage.getItem('token')}` // Include authorization token
-        }
+      const response = await api.post('/gestor/qualification', formData, {
+        headers: { 'Authorization': `Bearer ${token}` }
+        // Content-Type para multipart/form-data é definido automaticamente pelo Axios/navegador
       });
 
-      if (response.status === 201) {
+      if (response.status === 201 || response.status === 200) {
         toast.success("Qualificações salvas com sucesso!");
-        navigate('/dashboard'); // Navigate to dashboard on success
+        localStorage.removeItem('userTitulos');
+        setTitulos([{ tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true }]);
+        setCurriculos([]);
+        setExtras([]);
+        navigate('/dashboard'); // Ou para onde for apropriado
       } else {
-        toast.info("As qualificações foram enviadas, mas houve uma resposta inesperada.");
+        toast.info(`Resposta do servidor: ${response.status}. Verifique os dados ou tente novamente.`);
       }
 
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const errorMessageFromApi = error.response?.data?.message || 'Erro ao salvar as qualificações. Por favor, tente novamente.';
-        toast.error(errorMessageFromApi);
-        console.error("Erro na API de qualificação:", error.response?.data || error.message);
+      if (isAxiosError(error)) {
+        const responseData = error.response?.data;
+        const errorMessage = responseData?.error || responseData?.message || (error.response?.status === 400 ? "Requisição malformatada: verifique os dados enviados." : 'Erro ao salvar as qualificações.');
+        toast.error(String(errorMessage));
+        console.error("Erro na API de qualificação:", responseData || error.message, error.response?.status, error.config);
+        if (error.response?.status === 401) {
+          toast.error("Sua sessão pode ter expirado ou você não tem permissão. Faça login novamente.");
+          navigate('/login');
+        }
       } else {
-        toast.error("Ocorreu um erro desconhecido ao salvar as informações.");
+        toast.error("Ocorreu um erro desconhecido ao processar sua solicitação.");
         console.error("Erro desconhecido:", error);
       }
     } finally {
-      setIsSubmitting(false); // Reset submission state
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center py-8 px-4 bg-gray-50 font-inter">
       <h1 className="text-4xl font-bold mb-8">VERITA AUDIT</h1>
-
       <div className="w-full max-w-4xl rounded-lg p-8 bg-white shadow-md">
         <h2 className="text-2xl font-semibold text-center mb-6">Qualificações Profissionais</h2>
-
+        
         <div className="space-y-6 mb-6">
-          {/* Section for Titulation */}
+          {/* Seção de Titulação */}
           <div className="space-y-4">
-            <label className="block text-lg font-semibold mb-2">
+            <label className="block text-lg font-semibold mb-1">
               <RequiredField>Titulação</RequiredField>
             </label>
-            <Button
-              variant="outline"
-              className="bg-[#90EE90] hover:bg-[#90EE90] text-white font-bold flex items-center gap-2 rounded-md"
-              onClick={adicionarTitulo}
-            >
+            <Button variant="outline" className="bg-[#90EE90] hover:bg-[#7CCD7C] text-white font-bold flex items-center gap-2 rounded-md px-4 py-2 text-sm" onClick={adicionarTitulo}>
               <Plus className="h-4 w-4" /> Adicionar Título
             </Button>
-
             {titulos.map((titulo, index) => (
-              <div key={`titulo-${index}`} className="mt-4 border rounded-lg p-4 shadow-sm">
-                <div
-                  className="flex justify-between items-center cursor-pointer"
-                  onClick={() => toggleExpandirTitulo(index)}
-                >
-                  <h3 className="font-medium text-gray-800">
-                    {titulo.tipo || "Novo Título"}
-                  </h3>
-                  {titulo.expanded ? (
-                    <ChevronUp className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 text-gray-500" />
-                  )}
+              <div key={`titulo-${index}`} className="mt-4 border rounded-lg p-4 shadow-sm bg-white">
+                <div className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-2 -m-2 rounded" onClick={() => toggleExpandirTitulo(index)}>
+                  <h3 className="font-medium text-gray-800">{titulo.curso || titulo.capacitacao || titulo.tipo || `Novo Título ${index + 1}`}</h3>
+                  {titulo.expanded ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
                 </div>
-
                 {titulo.expanded && (
-                  <div className="mt-4 space-y-4">
+                  <div className="mt-4 space-y-4 pt-2 border-t border-gray-200">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="block text-sm font-medium">
-                          <RequiredField>Tipo de Titulação</RequiredField>
-                        </label>
-                        <Select
-                          value={titulo.tipo}
-                          onValueChange={(value) => atualizarTitulo(index, 'tipo', value)}
-                        >
-                          <SelectTrigger className="py-4 rounded-md">
-                            <SelectValue placeholder="Selecione o tipo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {tiposTitulacao.map((tipo) => (
-                              <SelectItem key={tipo} value={tipo}>
-                                {tipo}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
+                      <div className="space-y-1">
+                        <label className="block text-sm font-medium text-gray-700"><RequiredField>Tipo de Titulação</RequiredField></label>
+                        <Select value={titulo.tipo} onValueChange={(value) => atualizarTitulo(index, 'tipo', value)}>
+                          <SelectTrigger className="h-11 py-2 rounded-md"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                          <SelectContent>{tiposTitulacao.map((tipoOption) => (<SelectItem key={tipoOption} value={tipoOption}>{tipoOption}</SelectItem>))}</SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
-                        <label className="block text-sm font-medium">
-                          <RequiredField>Instituição</RequiredField>
-                        </label>
-                        <Input
-                          value={titulo.instituicao}
-                          onChange={(e) => atualizarTitulo(index, 'instituicao', e.target.value)}
-                          placeholder="Nome da instituição"
-                          className="py-4 rounded-md"
-                        />
+                      <div className="space-y-1">
+                        <label className="block text-sm font-medium text-gray-700"><RequiredField>Capacitação</RequiredField></label>
+                        <Select value={titulo.capacitacao} onValueChange={(value) => atualizarTitulo(index, 'capacitacao', value)}>
+                          <SelectTrigger className="h-11 py-2 rounded-md"><SelectValue placeholder="Selecione a capacitação" /></SelectTrigger>
+                          <SelectContent>{tiposCapacitacao.map((capOption) => (<SelectItem key={capOption.value} value={capOption.value}>{capOption.label}</SelectItem>))}</SelectContent>
+                        </Select>
                       </div>
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="block text-sm font-medium">
-                          <RequiredField>Nome do Curso</RequiredField>
-                        </label>
-                        <Input
-                          value={titulo.curso}
-                          onChange={(e) => atualizarTitulo(index, 'curso', e.target.value)}
-                          placeholder="Ex: Direito, Engenharia Civil"
-                          className="py-4 rounded-md"
-                        />
+                       <div className="space-y-1">
+                        <label className="block text-sm font-medium text-gray-700"><RequiredField>Instituição</RequiredField></label>
+                        <Input value={titulo.instituicao} onChange={(e) => atualizarTitulo(index, 'instituicao', e.target.value)} placeholder="Nome da instituição" className="h-11 py-2 rounded-md" />
                       </div>
-                      <div className="space-y-2">
-                        <label className="block text-sm font-medium">
-                          <RequiredField>Data de Conclusão</RequiredField>
-                        </label>
-                        <Input
-                          type="date"
-                          value={titulo.dataConclusao}
-                          onChange={(e) => atualizarTitulo(index, 'dataConclusao', e.target.value)}
-                          className="py-4 rounded-md"
-                        />
+                      <div className="space-y-1">
+                        <label className="block text-sm font-medium text-gray-700"><RequiredField>Nome do Curso</RequiredField></label>
+                        <Input value={titulo.curso} onChange={(e) => atualizarTitulo(index, 'curso', e.target.value)} placeholder="Ex: Direito, Engenharia Civil" className="h-11 py-2 rounded-md" />
                       </div>
                     </div>
-
-                    <div className="flex justify-end">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="block text-sm font-medium text-gray-700"><RequiredField>Data de Conclusão</RequiredField></label>
+                        <Input type="date" value={titulo.dataConclusao} onChange={(e) => atualizarTitulo(index, 'dataConclusao', e.target.value)} className="h-11 py-2 rounded-md" />
+                      </div>
+                    </div>
+                    <div className="flex justify-end mt-2">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => removerTitulo(index)}
-                        className="text-red-500 hover:text-red-700 rounded-md"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md px-3 py-1.5 text-sm"
+                        disabled={titulos.length === 1 && 
+                                  !titulo.tipo && 
+                                  !titulo.curso && 
+                                  !titulo.instituicao && 
+                                  !titulo.capacitacao &&
+                                  !titulo.dataConclusao &&
+                                  index === 0
+                                 }
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Remover Título
+                        <Trash2 className="h-4 w-4 mr-1.5" /> Remover Título
                       </Button>
                     </div>
                   </div>
@@ -486,37 +390,24 @@ const Qualificacao = () => {
             ))}
           </div>
 
-          {/* Section for Curricula */}
+          {/* Seção de Currículos */}
           <div className="space-y-4">
-            <label className="block text-lg font-semibold mb-2">
-              <RequiredField>Currículos (PDF)</RequiredField>
-            </label>
-            <Button
-              variant="outline"
-              className="bg-[#90EE90] hover:bg-[#90EE90] text-white font-bold flex items-center gap-2 mb-2 rounded-md"
-              onClick={adicionarCurriculo}
-            >
+            <label className="block text-lg font-semibold mb-1"><RequiredField>Currículos (PDF)</RequiredField></label>
+            <Button variant="outline" className="bg-[#90EE90] hover:bg-[#7CCD7C] text-white font-bold flex items-center gap-2 mb-2 rounded-md px-4 py-2 text-sm" onClick={adicionarCurriculo}>
               <Plus className="h-4 w-4" /> Adicionar Currículo
             </Button>
-
             {curriculos.map((fileEntry, index) => (
               <div key={`curriculo-${index}`} className="mt-2">
                 <FileDropzone
                   onFileAccepted={(file) => {
-                    if (!validarPDF(file)) {
-                      toast.error("Por favor, selecione um arquivo PDF.");
-                      return;
-                    }
-                    if (!validarTamanhoArquivo(file)) {
-                      toast.error("O arquivo do currículo não pode exceder 5MB.");
-                      return;
-                    }
+                    if (!validarPDF(file)) { toast.error("Por favor, selecione um arquivo PDF."); return; }
+                    if (!validarTamanhoArquivo(file)) { toast.error("O arquivo do currículo não pode exceder 5MB."); return; }
                     const novos = [...curriculos];
-                    novos[index] = { ...novos[index], file: file }; // Update only the file
+                    novos[index] = { ...novos[index], file: file };
                     setCurriculos(novos);
                     toast.success(`Currículo ${file.name} adicionado.`);
                   }}
-                  fileData={fileEntry} // Pass the entire file entry object
+                  fileData={fileEntry}
                   onRemove={() => removerCurriculo(index)}
                   type="curriculo"
                 />
@@ -524,39 +415,26 @@ const Qualificacao = () => {
             ))}
           </div>
 
-          {/* Section for Certificates */}
+          {/* Seção de Certificados */}
           <div className="space-y-4">
-            <label className="block text-lg font-semibold mb-2">
-              <RequiredField>Certificados (PDF)</RequiredField>
-            </label>
-            <Button
-              variant="outline"
-              className="bg-[#90EE90] hover:bg-[#90EE90] text-white font-bold flex items-center gap-2 mb-2 rounded-md"
-              onClick={adicionarExtra}
-            >
+            <label className="block text-lg font-semibold mb-1">Certificados (PDF) <span className="text-sm font-normal text-gray-500">(Opcional)</span></label>
+            <Button variant="outline" className="bg-[#90EE90] hover:bg-[#7CCD7C] text-white font-bold flex items-center gap-2 mb-2 rounded-md px-4 py-2 text-sm" onClick={adicionarExtra}>
               <Plus className="h-4 w-4" /> Adicionar Certificado
             </Button>
-
             {extras.map((fileEntry, index) => (
               <div key={`certificado-${index}`} className="mt-2">
                 <FileDropzone
                   onFileAccepted={(file) => {
-                    if (!validarPDF(file)) {
-                      toast.error("Por favor, selecione um arquivo PDF.");
-                      return;
-                    }
-                    if (!validarTamanhoArquivo(file)) {
-                      toast.error("O arquivo do certificado não pode exceder 5MB.");
-                      return;
-                    }
+                    if (!validarPDF(file)) { toast.error("Por favor, selecione um arquivo PDF."); return; }
+                    if (!validarTamanhoArquivo(file)) { toast.error("O arquivo do certificado não pode exceder 5MB."); return; }
                     const novos = [...extras];
-                    novos[index] = { ...novos[index], file: file }; // Update only the file
+                    novos[index] = { ...novos[index], file: file };
                     setExtras(novos);
                     toast.success(`Certificado ${file.name} adicionado.`);
                   }}
-                  fileData={fileEntry} // Pass the entire file entry object
+                  fileData={fileEntry}
                   onRemove={() => removerExtra(index)}
-                  onDescriptionChange={(description) => { // New handler for description
+                  onDescriptionChange={(description) => {
                     const novos = [...extras];
                     novos[index] = { ...novos[index], description: description };
                     setExtras(novos);
@@ -570,15 +448,14 @@ const Qualificacao = () => {
 
         <div className="flex justify-end mt-8">
           <Button
-            className="bg-[#90EE90] hover:bg-[#90EE90] text-white font-bold px-8 py-6 text-lg rounded-md"
+            className="bg-[#90EE90] hover:bg-[#7CCD7C] text-white font-bold px-8 py-3 text-lg h-auto rounded-md"
             onClick={handleFinalizar}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
-              <>
-                <LoadingSpinner />
-                Salvando...
-              </>
+              <div className="flex items-center gap-2">
+                <LoadingSpinner /> Salvando...
+              </div>
             ) : (
               'Finalizar Cadastro'
             )}
