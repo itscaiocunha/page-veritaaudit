@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
-import api from "@/lib/axios"; // CONFIRA ESTE CAMINHO
+import api from "@/lib/axios";
 import { isAxiosError } from "axios";
 
 // Tipos
@@ -175,11 +175,7 @@ const Qualificacao = () => {
   const validarTamanhoArquivo = (file: File): boolean => (5 * 1024 * 1024) >= file.size;
 
   const validarData = (data: string): boolean => {
-    if (!data) return false;
-    const hoje = new Date();
-    const dataSelecionada = new Date(data + 'T00:00:00Z'); 
-    hoje.setUTCHours(0, 0, 0, 0);
-    return dataSelecionada <= hoje;
+    return !isNaN(Date.parse(data));
   };
 
   const adicionarTitulo = () => {
