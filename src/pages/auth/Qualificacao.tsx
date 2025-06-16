@@ -25,13 +25,19 @@ type Titulo = {
   expanded: boolean;
 };
 
+type Links = {
+  linkedinLink: string;
+  lattesLink: string;
+};
+
 type FileEntry = {
   file: File | null;
   description: string;
+  capacitacao: string;
 };
 
 type StoredTitulo = Omit<Titulo, 'expanded' | 'capacitacao'> & {
-  capacitacao?: string; // Para compatibilidade com localStorage antigo
+  capacitacao?: string;
   expanded?: boolean;
 };
 
@@ -46,7 +52,7 @@ const tiposTitulacao = [
 ];
 
 const tiposCapacitacao = [
-  { value: "ETNICA", label: "Étnica" },
+  { value: "ETICA", label: "Ética" },
   { value: "PRATICA", label: "Prática" },
   { value: "ESPECIFICA", label: "Específica" },
 ];
@@ -57,12 +63,14 @@ const FileDropzone = ({
   fileData,
   onRemove,
   onDescriptionChange,
+  onCapacitacaoChange, // New prop for capacitacao change
   type
 }: {
   onFileAccepted: (file: File) => void,
   fileData: FileEntry,
   onRemove: () => void,
   onDescriptionChange?: (description: string) => void,
+  onCapacitacaoChange?: (capacitacao: string) => void, // Optional
   type: 'curriculo' | 'extra'
 }) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -96,14 +104,32 @@ const FileDropzone = ({
               <Trash2 className="h-5 w-5" />
             </Button>
           </div>
-          {type === 'extra' && onDescriptionChange && (
-            <Input
-              placeholder="Descrição do certificado*"
-              value={fileData.description}
-              onChange={(e) => onDescriptionChange(e.target.value)}
-              className="mt-2 py-4"
-              onClick={(e) => e.stopPropagation()}
-            />
+          {type === 'extra' && (
+            <>
+              {onDescriptionChange && (
+                <Input
+                  placeholder="Descrição do certificado*"
+                  value={fileData.description}
+                  onChange={(e) => onDescriptionChange(e.target.value)}
+                  className="mt-2 py-4"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
+              {onCapacitacaoChange && (
+                <Select value={fileData.capacitacao} onValueChange={(value) => onCapacitacaoChange(value)}>
+                  <SelectTrigger className="h-11 py-2 rounded-md mt-2" onClick={(e) => e.stopPropagation()}>
+                    <SelectValue placeholder="Selecione a capacitação*" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tiposCapacitacao.map((capOption) => (
+                      <SelectItem key={capOption.value} value={capOption.value}>
+                        {capOption.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </>
           )}
         </div>
       ) : (
@@ -135,12 +161,14 @@ const LoadingSpinner = () => (
 );
 
 // Componente Principal Qualificacao
+// Componente Principal Qualificacao
 const Qualificacao = () => {
   const navigate = useNavigate();
 
   const [titulos, setTitulos] = useState<Titulo[]>([{
     tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true,
   }]);
+  const [links, setLinks] = useState<Links>({ linkedinLink: "", lattesLink: "" });
   const [curriculos, setCurriculos] = useState<FileEntry[]>([]);
   const [extras, setExtras] = useState<FileEntry[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -155,9 +183,9 @@ const Qualificacao = () => {
             tipo: t.tipo || "",
             curso: t.curso || "",
             instituicao: t.instituicao || "",
-            capacitacao: t.capacitacao || "", 
+            capacitacao: t.capacitacao || "",
             dataConclusao: t.dataConclusao || "",
-            expanded: false, 
+            expanded: false,
           })));
         } else {
           setTitulos([{ tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true }]);
@@ -175,7 +203,11 @@ const Qualificacao = () => {
   const validarTamanhoArquivo = (file: File): boolean => (5 * 1024 * 1024) >= file.size;
 
   const validarData = (data: string): boolean => {
-    return !isNaN(Date.parse(data));
+    const date = new Date(data);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time for accurate date comparison
+
+    return !isNaN(date.getTime()) && date <= today;
   };
 
   const adicionarTitulo = () => {
@@ -195,9 +227,9 @@ const Qualificacao = () => {
     toast.success("Título removido!");
   };
 
-  const adicionarCurriculo = () => setCurriculos(prev => [...prev, { file: null, description: '' }]);
-  const adicionarExtra = () => setExtras(prev => [...prev, { file: null, description: '' }]);
-  
+  const adicionarCurriculo = () => setCurriculos(prev => [...prev, { file: null, description: '', capacitacao: '' }]);
+  const adicionarExtra = () => setExtras(prev => [...prev, { file: null, description: '', capacitacao: '' }]);
+
   const removerCurriculo = (index: number) => {
     setCurriculos(prev => prev.filter((_, i) => i !== index));
     toast.success("Currículo removido!");
@@ -240,6 +272,7 @@ const Qualificacao = () => {
       for (const [index, extra] of extras.entries()) {
         if (!extra.file) { toast.error(`Por favor, adicione o arquivo para o certificado extra ${index + 1}.`); setIsSubmitting(false); return; }
         if (!extra.description.trim()) { toast.error(`A descrição é obrigatória para o certificado extra ${index + 1}.`); setIsSubmitting(false); return; }
+        if (!extra.capacitacao) { toast.error(`A capacitação é obrigatória para o certificado extra ${index + 1}.`); setIsSubmitting(false); return; }
       }
 
       const formData = new FormData();
@@ -255,15 +288,32 @@ const Qualificacao = () => {
       }));
 
       const certificadosDetailsParaAPI = extras.map(entry => ({
-        descricao: entry.description
+        descricao: entry.description,
+        // Assuming 'certificadoType' is the correct field name for the backend
+        certificadoType: entry.capacitacao
       }));
 
-      const jsonDataPayload = { titulacao: titulosParaAPI, certificadosDetails: certificadosDetailsParaAPI };
-      
+      const jsonDataPayload: {
+        titulacao: typeof titulosParaAPI;
+        certificadosDetails: typeof certificadosDetailsParaAPI;
+        curriculoLattes?: string;
+        linkLinkedin?: string;
+      } = {
+        titulacao: titulosParaAPI,
+        certificadosDetails: certificadosDetailsParaAPI,
+      };
+
+      // Add Lattes and LinkedIn links directly to the JSON payload if they exist
+      if (links.lattesLink) {
+        jsonDataPayload.curriculoLattes = links.lattesLink;
+      }
+      if (links.linkedinLink) {
+        jsonDataPayload.linkLinkedin = links.linkedinLink;
+      }
+
       console.log("Payload JSON a ser enviado no campo 'data':", JSON.stringify(jsonDataPayload, null, 2));
-      // Adicionar um nome de arquivo ao Blob pode ajudar alguns backends, embora geralmente não seja necessário para JSON.
-      formData.append('data', new Blob([JSON.stringify(jsonDataPayload)], { type: 'application/json' }), 'payload.json'); 
-      
+      formData.append('data', new Blob([JSON.stringify(jsonDataPayload)], { type: 'application/json' }), 'payload.json');
+
       const token = sessionStorage.getItem('token');
       if (!token) {
         toast.error("Sessão expirada ou token não encontrado. Faça login novamente.");
@@ -274,7 +324,6 @@ const Qualificacao = () => {
 
       const response = await api.post('/gestor/qualification', formData, {
         headers: { 'Authorization': `Bearer ${token}` }
-        // Content-Type para multipart/form-data é definido automaticamente pelo Axios/navegador
       });
 
       if (response.status === 201 || response.status === 200) {
@@ -283,7 +332,7 @@ const Qualificacao = () => {
         setTitulos([{ tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true }]);
         setCurriculos([]);
         setExtras([]);
-        navigate('/dashboard'); // Ou para onde for apropriado
+        navigate('/dashboard');
       } else {
         toast.info(`Resposta do servidor: ${response.status}. Verifique os dados ou tente novamente.`);
       }
@@ -312,7 +361,7 @@ const Qualificacao = () => {
       <h1 className="text-4xl font-bold mb-8">VERITA AUDIT</h1>
       <div className="w-full max-w-4xl rounded-lg p-8 bg-white shadow-md">
         <h2 className="text-2xl font-semibold text-center mb-6">Qualificações Profissionais</h2>
-        
+
         <div className="space-y-6 mb-6">
           {/* Seção de Titulação */}
           <div className="space-y-4">
@@ -347,7 +396,7 @@ const Qualificacao = () => {
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div className="space-y-1">
+                      <div className="space-y-1">
                         <label className="block text-sm font-medium text-gray-700"><RequiredField>Instituição</RequiredField></label>
                         <Input value={titulo.instituicao} onChange={(e) => atualizarTitulo(index, 'instituicao', e.target.value)} placeholder="Nome da instituição" className="h-11 py-2 rounded-md" />
                       </div>
@@ -368,14 +417,14 @@ const Qualificacao = () => {
                         size="sm"
                         onClick={() => removerTitulo(index)}
                         className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md px-3 py-1.5 text-sm"
-                        disabled={titulos.length === 1 && 
-                                  !titulo.tipo && 
-                                  !titulo.curso && 
-                                  !titulo.instituicao && 
-                                  !titulo.capacitacao &&
-                                  !titulo.dataConclusao &&
-                                  index === 0
-                                 }
+                        disabled={titulos.length === 1 &&
+                          !titulo.tipo &&
+                          !titulo.curso &&
+                          !titulo.instituicao &&
+                          !titulo.capacitacao &&
+                          !titulo.dataConclusao &&
+                          index === 0
+                        }
                       >
                         <Trash2 className="h-4 w-4 mr-1.5" /> Remover Título
                       </Button>
@@ -408,14 +457,26 @@ const Qualificacao = () => {
                   type="curriculo"
                 />
               </div>
+
             ))}
+            <Input
+              type="url"
+              placeholder="Link do Currículo Lattes (opcional)"
+              value={links.lattesLink}
+              onChange={e => setLinks(prev => ({ ...prev, lattesLink: e.target.value }))} />
+            <Input
+              type="url"
+              placeholder="Link do LinkedIn (opcional)"
+              value={links.linkedinLink}
+              onChange={e => setLinks(prev => ({ ...prev, linkedinLink: e.target.value }))}
+            />
           </div>
 
           {/* Seção de Certificados */}
           <div className="space-y-4">
-            <label className="block text-lg font-semibold mb-1">Certificados (PDF) <span className="text-sm font-normal text-gray-500">(Opcional)</span></label>
+            <label className="block text-lg font-semibold mb-1">Treinamentos (PDF) <span className="text-sm font-normal text-gray-500">(Opcional)</span></label>
             <Button variant="outline" className="bg-[#90EE90] hover:bg-[#7CCD7C] text-white font-bold flex items-center gap-2 mb-2 rounded-md px-4 py-2 text-sm" onClick={adicionarExtra}>
-              <Plus className="h-4 w-4" /> Adicionar Certificado
+              <Plus className="h-4 w-4" /> Adicionar Treinamento
             </Button>
             {extras.map((fileEntry, index) => (
               <div key={`certificado-${index}`} className="mt-2">
@@ -433,6 +494,11 @@ const Qualificacao = () => {
                   onDescriptionChange={(description) => {
                     const novos = [...extras];
                     novos[index] = { ...novos[index], description: description };
+                    setExtras(novos);
+                  }}
+                  onCapacitacaoChange={(capacitacao) => {
+                    const novos = [...extras];
+                    novos[index] = { ...novos[index], capacitacao: capacitacao };
                     setExtras(novos);
                   }}
                   type="extra"

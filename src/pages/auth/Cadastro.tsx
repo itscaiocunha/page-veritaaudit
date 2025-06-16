@@ -8,6 +8,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import axios from "axios";
 import { toast } from "react-toastify";
+import InputMask from "react-input-mask";
+import api from '@/lib/axios';
 
 // Validação (sem alterações)
 const schema = yup.object({
@@ -21,8 +23,6 @@ const schema = yup.object({
   cnpj: yup.string().required("CNPJ da Empresa é obrigatório").matches(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, "CNPJ inválido"),
   tipoEmpresa: yup.string().required("Escolha um tipo de empresa"),
   profissao: yup.string().required("Profissão é obrigatória"),
-  curriculoLattes: yup.string().url("Informe uma URL válida para o currículo Lattes").notRequired(),
-  linkedin: yup.string().url("Informe uma URL válida para o LinkedIn").notRequired(),
   cep: yup.string().required("CEP é obrigatório").matches(/^\d{5}-\d{3}$/, "CEP inválido"),
   numero: yup.string().required("Número é obrigatório"),
   logradouro: yup.string().required("Logradouro é obrigatório"),
@@ -36,7 +36,6 @@ const schema = yup.object({
 
 type FormData = yup.InferType<typeof schema>;
 
-// Tipos para os componentes internos
 interface CameraModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -56,15 +55,12 @@ const CameraModal = ({ isOpen, onClose, onPictureTaken }: CameraModalProps) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Este efeito lida exclusivamente com o ciclo de vida da câmera.
     let stream: MediaStream | null = null;
 
     const startAndSetupCamera = async () => {
       try {
-        // Solicita o fluxo da câmera.
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
         
-        // Se obtivermos o fluxo e o elemento de vídeo estiver montado, anexe-o.
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
@@ -83,20 +79,16 @@ const CameraModal = ({ isOpen, onClose, onPictureTaken }: CameraModalProps) => {
     };
 
     if (isOpen) {
-      // Quando o modal abre, reseta qualquer erro anterior e inicia a câmera.
       setError(null);
       startAndSetupCamera();
     }
 
-    // Retorna uma função de limpeza.
-    // Isso é executado quando o componente é desmontado ou quando uma dependência muda (neste caso, quando `isOpen` muda).
     return () => {
-      // Se um fluxo foi iniciado com sucesso, pare todas as suas faixas.
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [isOpen]); // A dependência do efeito é exclusivamente se o modal está aberto ou fechado.
+  }, [isOpen]);
 
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current) {
@@ -160,13 +152,17 @@ const Cadastro = () => {
     mode: "onChange"
   });
 
+  const handleMaskChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof FormData) => {
+    setValue(field, e.target.value, { shouldValidate: true });
+  };
+
   const handleNext = async () => {
     const valid = await trigger(["foto", "nome", "cpf", "telefone", "emailPrincipal", "emailSecundario", "password"]);
     if (valid) setStep(2);
   };
 
   const handleNextAddress = async () => {
-    const valid = await trigger(["cnpj", "tipoEmpresa", "profissao", "curriculoLattes", "linkedin", "razaoSocial", "relacaoEmpresa"]);
+    const valid = await trigger(["cnpj", "tipoEmpresa", "profissao", "razaoSocial", "relacaoEmpresa"]);
     if (valid) setStep(3);
   };
 
@@ -181,8 +177,6 @@ const Cadastro = () => {
         emailSecundario: data.emailSecundario || undefined,
         senha: data.password,
         profissao: data.profissao,
-        linkLinkedin: data.linkedin || undefined,
-        curriculoLattes: data.curriculoLattes || undefined,
         endereco: {
           cep: data.cep.replace(/\D/g, ''),
           rua: data.logradouro,
@@ -207,7 +201,7 @@ const Cadastro = () => {
         toast.error("Por favor, selecione uma foto de perfil.");
         return;
       }
-      const response = await axios.post('/gestor', formData);
+      const response = await api.post('/gestor', formData);
       if (response.status === 200 || response.status === 201) {
         toast.success("Cadastrado com sucesso!");
         reset();
@@ -287,10 +281,15 @@ const Cadastro = () => {
                 </div>
                 <Input placeholder="Nome completo*" className="py-6" {...register("nome")} />
                 {errors.nome && <p className="text-red-500 text-sm">{errors.nome.message}</p>}
-                <Input placeholder="CPF* (formato: 999.999.999-99)" className="py-6" {...register("cpf")} />
-                {errors.cpf && <p className="text-red-500 text-sm">{errors.cpf.message}</p>}
-                <Input placeholder="Telefone/Celular* (formato: (99) 99999-9999)" className="py-6" {...register("telefone")} />
-                {errors.telefone && <p className="text-red-500 text-sm">{errors.telefone.message}</p>}
+                <InputMask mask="999.999.999-99" value={watch("cpf") || ""} onChange={(e) => handleMaskChange(e, "cpf")}>
+                {(inputProps: any) => <Input {...inputProps} placeholder="CPF*" className="py-6" />}
+              </InputMask>
+              {errors.cpf && <p className="text-red-500 text-sm">{errors.cpf.message}</p>}
+
+              <InputMask mask="(99) 99999-9999" value={watch("telefone") || ""} onChange={(e) => handleMaskChange(e, "telefone")}>
+                {(inputProps: any) => <Input {...inputProps} placeholder="Telefone/Celular*" className="py-6" />}
+              </InputMask>
+              {errors.telefone && <p className="text-red-500 text-sm">{errors.telefone.message}</p>}
                 <Input placeholder="E-mail Principal*" className="py-6" {...register("emailPrincipal")} />
                 {errors.emailPrincipal && <p className="text-red-500 text-sm">{errors.emailPrincipal.message}</p>}
                 <Input placeholder="E-mail Secundário" className="py-6" {...register("emailSecundario")} />
@@ -337,10 +336,6 @@ const Cadastro = () => {
                 </div>
                 <Input placeholder="Profissão*" className="py-6" {...register("profissao")} />
                 {errors.profissao && <p className="text-red-500 text-sm">{errors.profissao.message}</p>}
-                <Input type="url" placeholder="Link do Currículo Lattes (opcional)" className="py-6" {...register("curriculoLattes")} />
-                {errors.curriculoLattes && <p className="text-red-500 text-sm">{errors.curriculoLattes.message}</p>}
-                <Input type="url" placeholder="Link do LinkedIn (opcional)" className="py-6" {...register("linkedin")} />
-                {errors.linkedin && <p className="text-red-500 text-sm">{errors.linkedin.message}</p>}
                 <div className="flex justify-between gap-4">
                   <Button type="button" onClick={() => setStep(1)} className="w-full py-6 bg-gray-300 text-black hover:bg-gray-400">Voltar</Button>
                   <Button type="button" className="w-full py-6 font-bold bg-[#90EE90] hover:bg-[#90EE90]" onClick={handleNextAddress}>Avançar</Button>
@@ -353,9 +348,9 @@ const Cadastro = () => {
                 {errors.cep && <p className="text-red-500 text-sm">{errors.cep.message}</p>}
                 <Input {...register("numero")} placeholder="Número*" />
                 {errors.numero && <p className="text-red-500 text-sm">{errors.numero.message}</p>}
-                <Input {...register("logradouro")} placeholder="Logradouro*" disabled />
+                <Input {...register("logradouro")} placeholder="Logradouro*" />
                 {errors.logradouro && <p className="text-red-500 text-sm">{errors.logradouro.message}</p>}
-                <Input {...register("bairro")} placeholder="Bairro*" disabled />
+                <Input {...register("bairro")} placeholder="Bairro*" />
                 {errors.bairro && <p className="text-red-500 text-sm">{errors.bairro.message}</p>}
                 <Input {...register("cidade")} placeholder="Cidade*" disabled />
                 {errors.cidade && <p className="text-red-500 text-sm">{errors.cidade.message}</p>}
