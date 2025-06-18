@@ -14,6 +14,8 @@ import RecuperarSenha from "./pages/auth/Recuperar";
 import NovaSenha from "./pages/auth/NovaSenha";
 import Validacao from "./pages/auth/Validacao";
 import NotFound from "./pages/NotFound";
+import { Dashboard } from "./pages/Dashboard";
+import Protocolo from "./pages/protocolo/NovoProtocolo";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,9 @@ const App = () => (
           <Route path="/nova-senha" element={<NovaSenha />} />
           <Route path="/validacao" element={<Validacao />} />
           <Route path="*" element={<NotFound />} />
+
+          <Route path="/dashboard" element={<Dashboard formData={{ name: "Caio" }} />} />
+          <Route path="/protocolo"  element={<Protocolo />}/>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
