@@ -15,12 +15,17 @@ import { useNavigate } from 'react-router-dom';
 import api from "@/lib/axios";
 import { isAxiosError } from "axios";
 
+// IMPORTAR O CHECKBOX DO SHADCN UI AQUI
+import { Checkbox } from "@/components/ui/checkbox"; // <<< Assumindo esta importação
+import { Label } from "@/components/ui/label"; // <<< Geralmente o Checkbox do Shadcn usa Label
+
+
 // Tipos
 type Titulo = {
   tipo: string;
   curso: string;
   instituicao: string;
-  capacitacao: string;
+  capacitacao: string[]; // Alterado para array de strings
   dataConclusao: string;
   expanded: boolean;
 };
@@ -33,11 +38,11 @@ type Links = {
 type FileEntry = {
   file: File | null;
   description: string;
-  capacitacao: string;
+  capacitacao: string[]; // Alterado para array de strings
 };
 
 type StoredTitulo = Omit<Titulo, 'expanded' | 'capacitacao'> & {
-  capacitacao?: string;
+  capacitacao?: string | string[]; // Permite string ou array ao ler do storage
   expanded?: boolean;
 };
 
@@ -54,7 +59,7 @@ const tiposTitulacao = [
 const tiposCapacitacao = [
   { value: "ETICA", label: "Ética" },
   { value: "PRATICA", label: "Prática" },
-  { value: "ESPECIFICA", label: "Específica" },
+  { value: "ESPECIFICA", label: "Treinamento Específico" },
 ];
 
 // Componente FileDropzone
@@ -63,14 +68,14 @@ const FileDropzone = ({
   fileData,
   onRemove,
   onDescriptionChange,
-  onCapacitacaoChange, // New prop for capacitacao change
+  onCapacitacaoChange,
   type
 }: {
   onFileAccepted: (file: File) => void,
   fileData: FileEntry,
   onRemove: () => void,
   onDescriptionChange?: (description: string) => void,
-  onCapacitacaoChange?: (capacitacao: string) => void, // Optional
+  onCapacitacaoChange?: (capacitacoes: string[]) => void, // Alterado para array de strings
   type: 'curriculo' | 'extra'
 }) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -83,11 +88,21 @@ const FileDropzone = ({
     }
   });
 
+  // Função para adicionar/remover uma capacitação selecionada
+  const handleCapacitacaoCheckboxChange = (value: string, checked: boolean) => {
+    if (onCapacitacaoChange) {
+      const currentCapacitacoes = fileData.capacitacao || [];
+      const newCapacitacoes = checked
+        ? [...currentCapacitacoes, value]
+        : currentCapacitacoes.filter(item => item !== value);
+      onCapacitacaoChange(newCapacitacoes);
+    }
+  };
+
   return (
     <div
       {...getRootProps()}
-      className={`flex-1 flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md cursor-pointer
-        ${isDragActive ? 'border-green-500 bg-green-50' : 'border-gray-300'} hover:bg-gray-50`}
+      className={`flex-1 flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md cursor-pointer ${isDragActive ? 'border-green-500 bg-green-50' : 'border-gray-300'} hover:bg-gray-50`}
     >
       <input {...getInputProps()} />
       {fileData.file ? (
@@ -116,18 +131,19 @@ const FileDropzone = ({
                 />
               )}
               {onCapacitacaoChange && (
-                <Select value={fileData.capacitacao} onValueChange={(value) => onCapacitacaoChange(value)}>
-                  <SelectTrigger className="h-11 py-2 rounded-md mt-2" onClick={(e) => e.stopPropagation()}>
-                    <SelectValue placeholder="Selecione a capacitação*" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tiposCapacitacao.map((capOption) => (
-                      <SelectItem key={capOption.value} value={capOption.value}>
-                        {capOption.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
+                  <label className="block text-sm font-medium text-gray-700">Capacitação*</label>
+                  {tiposCapacitacao.map((capOption) => (
+                    <div key={`extra-${capOption.value}`} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`extra-capacitacao-${capOption.value}`}
+                        checked={fileData.capacitacao.includes(capOption.value)}
+                        onCheckedChange={(checked: boolean) => handleCapacitacaoCheckboxChange(capOption.value, checked)}
+                      />
+                      <Label htmlFor={`extra-capacitacao-${capOption.value}`}>{capOption.label}</Label>
+                    </div>
+                  ))}
+                </div>
               )}
             </>
           )}
@@ -161,12 +177,11 @@ const LoadingSpinner = () => (
 );
 
 // Componente Principal Qualificacao
-// Componente Principal Qualificacao
 const Qualificacao = () => {
   const navigate = useNavigate();
 
   const [titulos, setTitulos] = useState<Titulo[]>([{
-    tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true,
+    tipo: "", curso: "", instituicao: "", capacitacao: [], dataConclusao: "", expanded: true,
   }]);
   const [links, setLinks] = useState<Links>({ linkedinLink: "", lattesLink: "" });
   const [curriculos, setCurriculos] = useState<FileEntry[]>([]);
@@ -183,19 +198,20 @@ const Qualificacao = () => {
             tipo: t.tipo || "",
             curso: t.curso || "",
             instituicao: t.instituicao || "",
-            capacitacao: t.capacitacao || "",
+            // Garante que 'capacitacao' seja sempre um array
+            capacitacao: Array.isArray(t.capacitacao) ? t.capacitacao : (t.capacitacao ? [t.capacitacao] : []),
             dataConclusao: t.dataConclusao || "",
             expanded: false,
           })));
         } else {
-          setTitulos([{ tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true }]);
+          setTitulos([{ tipo: "", curso: "", instituicao: "", capacitacao: [], dataConclusao: "", expanded: true }]);
         }
       } catch (e) {
         console.error("Erro ao parsear títulos do localStorage ou formato inválido:", e);
-        setTitulos([{ tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true }]);
+        setTitulos([{ tipo: "", curso: "", instituicao: "", capacitacao: [], dataConclusao: "", expanded: true }]);
       }
     } else {
-      setTitulos([{ tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true }]);
+      setTitulos([{ tipo: "", curso: "", instituicao: "", capacitacao: [], dataConclusao: "", expanded: true }]);
     }
   }, []);
 
@@ -211,15 +227,39 @@ const Qualificacao = () => {
   };
 
   const adicionarTitulo = () => {
-    setTitulos(prev => [...prev, { tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true }]);
+    setTitulos(prev => [...prev, { tipo: "", curso: "", instituicao: "", capacitacao: [], dataConclusao: "", expanded: true }]);
   };
 
   const toggleExpandirTitulo = (index: number) => {
     setTitulos(prev => prev.map((t, i) => i === index ? { ...t, expanded: !t.expanded } : t));
   };
 
-  const atualizarTitulo = (index: number, campo: keyof Omit<Titulo, 'expanded'>, valor: string) => {
-    setTitulos(prev => prev.map((t, i) => i === index ? { ...t, [campo]: valor } : t));
+  // Função para atualizar um campo de Titulo, incluindo o array de capacitação
+  const actualizarTitulo = (index: number, campo: keyof Omit<Titulo, 'expanded'>, valor: string | string[]) => {
+    setTitulos(prev => prev.map((t, i) => {
+      if (i === index) {
+        if (campo === 'capacitacao') {
+          // Garante que 'valor' é um array para 'capacitacao'
+          return { ...t, [campo]: Array.isArray(valor) ? valor : [] };
+        }
+        return { ...t, [campo]: valor };
+      }
+      return t;
+    }));
+  };
+
+  // Função para lidar com a seleção de capacitação em Títulos (adicionar/remover)
+  const handleTituloCapacitacaoCheckboxChange = (index: number, value: string, checked: boolean) => {
+    setTitulos(prev => prev.map((t, i) => {
+      if (i === index) {
+        const currentCapacitacoes = t.capacitacao || [];
+        const newCapacitacoes = checked
+          ? [...currentCapacitacoes, value]
+          : currentCapacitacoes.filter(item => item !== value);
+        return { ...t, capacitacao: newCapacitacoes };
+      }
+      return t;
+    }));
   };
 
   const removerTitulo = (index: number) => {
@@ -227,8 +267,8 @@ const Qualificacao = () => {
     toast.success("Título removido!");
   };
 
-  const adicionarCurriculo = () => setCurriculos(prev => [...prev, { file: null, description: '', capacitacao: '' }]);
-  const adicionarExtra = () => setExtras(prev => [...prev, { file: null, description: '', capacitacao: '' }]);
+  const adicionarCurriculo = () => setCurriculos(prev => [...prev, { file: null, description: '', capacitacao: [] }]);
+  const adicionarExtra = () => setExtras(prev => [...prev, { file: null, description: '', capacitacao: [] }]); // Inicializa com array vazio
 
   const removerCurriculo = (index: number) => {
     setCurriculos(prev => prev.filter((_, i) => i !== index));
@@ -249,8 +289,10 @@ const Qualificacao = () => {
         setIsSubmitting(false); return;
       }
       for (const [index, titulo] of titulos.entries()) {
+        // Validação de Tipo de Titulação (ainda é um Select)
         if (!titulo.tipo) { toast.error(`O tipo é obrigatório para o título ${index + 1}.`); setIsSubmitting(false); return; }
-        if (!titulo.capacitacao) { toast.error(`A capacitação é obrigatória para o título ${index + 1}.`); setIsSubmitting(false); return; }
+        // Validação da capacitação para ter pelo menos uma seleção (agora com checkboxes)
+        if (!titulo.capacitacao || titulo.capacitacao.length === 0) { toast.error(`A capacitação é obrigatória para o título ${index + 1}.`); setIsSubmitting(false); return; }
         if (!titulo.instituicao.trim()) { toast.error(`A instituição é obrigatória para o título ${index + 1}.`); setIsSubmitting(false); return; }
         if (!titulo.curso.trim()) { toast.error(`O nome do curso é obrigatório para o título ${index + 1}.`); setIsSubmitting(false); return; }
         if (!titulo.dataConclusao) { toast.error(`A data de conclusão é obrigatória para o título ${index + 1}.`); setIsSubmitting(false); return; }
@@ -272,7 +314,8 @@ const Qualificacao = () => {
       for (const [index, extra] of extras.entries()) {
         if (!extra.file) { toast.error(`Por favor, adicione o arquivo para o certificado extra ${index + 1}.`); setIsSubmitting(false); return; }
         if (!extra.description.trim()) { toast.error(`A descrição é obrigatória para o certificado extra ${index + 1}.`); setIsSubmitting(false); return; }
-        if (!extra.capacitacao) { toast.error(`A capacitação é obrigatória para o certificado extra ${index + 1}.`); setIsSubmitting(false); return; }
+        // Validação da capacitação para ter pelo menos uma seleção (agora com checkboxes)
+        if (!extra.capacitacao || extra.capacitacao.length === 0) { toast.error(`A capacitação é obrigatória para o certificado extra ${index + 1}.`); setIsSubmitting(false); return; }
       }
 
       const formData = new FormData();
@@ -284,13 +327,12 @@ const Qualificacao = () => {
         instituicao: t.instituicao,
         curso: t.curso,
         dataConclusao: t.dataConclusao,
-        capacitacaoType: t.capacitacao
+        capacitacaoType: t.capacitacao.join(', ') // Junta o array em uma string separada por vírgulas
       }));
 
       const certificadosDetailsParaAPI = extras.map(entry => ({
         descricao: entry.description,
-        // Assuming 'certificadoType' is the correct field name for the backend
-        certificadoType: entry.capacitacao
+        certificadoType: entry.capacitacao.join(', ') // Junta o array em uma string separada por vírgulas
       }));
 
       const jsonDataPayload: {
@@ -329,7 +371,7 @@ const Qualificacao = () => {
       if (response.status === 201 || response.status === 200) {
         toast.success("Qualificações salvas com sucesso!");
         localStorage.removeItem('userTitulos');
-        setTitulos([{ tipo: "", curso: "", instituicao: "", capacitacao: "", dataConclusao: "", expanded: true }]);
+        setTitulos([{ tipo: "", curso: "", instituicao: "", capacitacao: [], dataConclusao: "", expanded: true }]);
         setCurriculos([]);
         setExtras([]);
         navigate('/dashboard');
@@ -374,7 +416,8 @@ const Qualificacao = () => {
             {titulos.map((titulo, index) => (
               <div key={`titulo-${index}`} className="mt-4 border rounded-lg p-4 shadow-sm bg-white">
                 <div className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-2 -m-2 rounded" onClick={() => toggleExpandirTitulo(index)}>
-                  <h3 className="font-medium text-gray-800">{titulo.curso || titulo.capacitacao || titulo.tipo || `Novo Título ${index + 1}`}</h3>
+                  {/* Prioriza titulo.curso para o nome do título */}
+                  <h3 className="font-medium text-gray-800">{titulo.curso || `Novo Título ${index + 1}`}</h3>
                   {titulo.expanded ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
                 </div>
                 {titulo.expanded && (
@@ -382,33 +425,42 @@ const Qualificacao = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="block text-sm font-medium text-gray-700"><RequiredField>Tipo de Titulação</RequiredField></label>
-                        <Select value={titulo.tipo} onValueChange={(value) => atualizarTitulo(index, 'tipo', value)}>
+                        {/* Mantendo Select para Tipo de Titulação, pois é seleção única */}
+                        <Select value={titulo.tipo} onValueChange={(value) => actualizarTitulo(index, 'tipo', value)}>
                           <SelectTrigger className="h-11 py-2 rounded-md"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
                           <SelectContent>{tiposTitulacao.map((tipoOption) => (<SelectItem key={tipoOption} value={tipoOption}>{tipoOption}</SelectItem>))}</SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-1">
                         <label className="block text-sm font-medium text-gray-700"><RequiredField>Capacitação</RequiredField></label>
-                        <Select value={titulo.capacitacao} onValueChange={(value) => atualizarTitulo(index, 'capacitacao', value)}>
-                          <SelectTrigger className="h-11 py-2 rounded-md"><SelectValue placeholder="Selecione a capacitação" /></SelectTrigger>
-                          <SelectContent>{tiposCapacitacao.map((capOption) => (<SelectItem key={capOption.value} value={capOption.value}>{capOption.label}</SelectItem>))}</SelectContent>
-                        </Select>
+                        <div className="mt-2 space-y-2"> {/* Container para os checkboxes */}
+                          {tiposCapacitacao.map((capOption) => (
+                            <div key={`titulo-${index}-capacitacao-${capOption.value}`} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`titulo-${index}-capacitacao-${capOption.value}`}
+                                checked={titulo.capacitacao.includes(capOption.value)}
+                                onCheckedChange={(checked: boolean) => handleTituloCapacitacaoCheckboxChange(index, capOption.value, checked)}
+                              />
+                              <Label htmlFor={`titulo-${index}-capacitacao-${capOption.value}`}>{capOption.label}</Label>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="block text-sm font-medium text-gray-700"><RequiredField>Instituição</RequiredField></label>
-                        <Input value={titulo.instituicao} onChange={(e) => atualizarTitulo(index, 'instituicao', e.target.value)} placeholder="Nome da instituição" className="h-11 py-2 rounded-md" />
+                        <Input value={titulo.instituicao} onChange={(e) => actualizarTitulo(index, 'instituicao', e.target.value)} placeholder="Nome da instituição" className="h-11 py-2 rounded-md" />
                       </div>
                       <div className="space-y-1">
                         <label className="block text-sm font-medium text-gray-700"><RequiredField>Nome do Curso</RequiredField></label>
-                        <Input value={titulo.curso} onChange={(e) => atualizarTitulo(index, 'curso', e.target.value)} placeholder="Ex: Direito, Engenharia Civil" className="h-11 py-2 rounded-md" />
+                        <Input value={titulo.curso} onChange={(e) => actualizarTitulo(index, 'curso', e.target.value)} placeholder="Ex: Direito, Engenharia Civil" className="h-11 py-2 rounded-md" />
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="block text-sm font-medium text-gray-700"><RequiredField>Data de Conclusão</RequiredField></label>
-                        <Input type="date" value={titulo.dataConclusao} onChange={(e) => atualizarTitulo(index, 'dataConclusao', e.target.value)} className="h-11 py-2 rounded-md" />
+                        <Input type="date" value={titulo.dataConclusao} onChange={(e) => actualizarTitulo(index, 'dataConclusao', e.target.value)} className="h-11 py-2 rounded-md" />
                       </div>
                     </div>
                     <div className="flex justify-end mt-2">
@@ -421,7 +473,7 @@ const Qualificacao = () => {
                           !titulo.tipo &&
                           !titulo.curso &&
                           !titulo.instituicao &&
-                          !titulo.capacitacao &&
+                          titulo.capacitacao.length === 0 && // Verifica se o array está vazio
                           !titulo.dataConclusao &&
                           index === 0
                         }
@@ -496,9 +548,9 @@ const Qualificacao = () => {
                     novos[index] = { ...novos[index], description: description };
                     setExtras(novos);
                   }}
-                  onCapacitacaoChange={(capacitacao) => {
+                  onCapacitacaoChange={(capacitacoes) => { // Recebe um array de strings
                     const novos = [...extras];
-                    novos[index] = { ...novos[index], capacitacao: capacitacao };
+                    novos[index] = { ...novos[index], capacitacao: capacitacoes };
                     setExtras(novos);
                   }}
                   type="extra"
