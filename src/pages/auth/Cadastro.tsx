@@ -138,6 +138,7 @@ const Cadastro = () => {
   const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isCameraOpen, setCameraOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const {
     register,
@@ -156,6 +157,23 @@ const Cadastro = () => {
     setValue(field, e.target.value, { shouldValidate: true });
   };
 
+  const handleCnpjChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawCnpj = e.target.value.replace(/\D/g, "");
+    setValue("cnpj", e.target.value, { shouldValidate: true });
+
+    if (rawCnpj.length === 14) {
+      try {
+        const res = await axios.get(`https://publica.cnpj.ws/cnpj/${rawCnpj}`);
+        if (res.data && res.data.razao_social) {
+          setValue("razaoSocial", res.data.razao_social, { shouldValidate: true });
+          toast.success("Razão Social preenchida automaticamente!");
+        }
+      } catch (error) {
+        toast.error("Erro ao buscar dados da empresa. Verifique o CNPJ.");
+      }
+    }
+  };
+
   const handleNext = async () => {
     const valid = await trigger(["foto", "nome", "cpf", "telefone", "emailPrincipal", "emailSecundario", "password"]);
     if (valid) setStep(2);
@@ -167,6 +185,7 @@ const Cadastro = () => {
   };
 
   const onSubmit = async (data: FormData) => {
+    setLoading(true); 
     try {
       const formData = new FormData();
       const dadosParaEnviar = {
@@ -217,6 +236,9 @@ const Cadastro = () => {
       } else {
         toast.error("Erro desconhecido ao cadastrar. Tente novamente.");
       }
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -292,7 +314,7 @@ const Cadastro = () => {
               {errors.telefone && <p className="text-red-500 text-sm">{errors.telefone.message}</p>}
                 <Input placeholder="E-mail Principal*" className="py-6" {...register("emailPrincipal")} />
                 {errors.emailPrincipal && <p className="text-red-500 text-sm">{errors.emailPrincipal.message}</p>}
-                <Input placeholder="E-mail Secundário" className="py-6" {...register("emailSecundario")} />
+                <Input placeholder="E-mail Secundário (Opcional)" className="py-6" {...register("emailSecundario")} />
                 {errors.emailSecundario && <p className="text-red-500 text-sm">{errors.emailSecundario.message}</p>}
                 <div className="relative">
                   <Input type={showPassword ? "text" : "password"} placeholder="Senha*" className="pr-10 py-6" {...register("password")} />
@@ -313,9 +335,17 @@ const Cadastro = () => {
             )}
             {step === 2 && (
               <>
-                <Input placeholder="CNPJ da Empresa* (formato: 99.999.999/9999-99)" className="py-6" {...register("cnpj")} />
+                <InputMask
+                  mask="99.999.999/9999-99"
+                  value={watch("cnpj") || ""}
+                  onChange={(e) => handleCnpjChange(e)}
+                >
+                  {(inputProps: any) => (
+                    <Input {...inputProps} placeholder="CNPJ da Empresa*" className="py-6" />
+                  )}
+                </InputMask>
                 {errors.cnpj && <p className="text-red-500 text-sm">{errors.cnpj.message}</p>}
-                <Input placeholder="Razão Social (opcional)" className="py-6" {...register("razaoSocial")} />
+                <Input placeholder="Razão Social" className="py-6" {...register("razaoSocial")}/>
                 {errors.razaoSocial && <p className="text-red-500 text-sm">{errors.razaoSocial.message}</p>}
                 <div className="mb-4">
                   <select {...register("tipoEmpresa")} className="w-full py-4 px-4 rounded-md border border-gray-300 bg-white text-gray-700 shadow-sm" defaultValue="">
@@ -344,7 +374,15 @@ const Cadastro = () => {
             )}
             {step === 3 && (
               <>
-                <Input placeholder="CEP* (formato: 99999-999)" {...register("cep")} onChange={handleCepChange} />
+                <InputMask
+                  mask="99999-999"
+                  value={watch("cep") || ""}
+                  onChange={handleCepChange}
+                >
+                  {(inputProps: any) => (
+                    <Input {...inputProps} placeholder="CEP*" className="py-6" />
+                  )}
+                </InputMask>
                 {errors.cep && <p className="text-red-500 text-sm">{errors.cep.message}</p>}
                 <Input {...register("numero")} placeholder="Número*" />
                 {errors.numero && <p className="text-red-500 text-sm">{errors.numero.message}</p>}
@@ -360,7 +398,24 @@ const Cadastro = () => {
                 {errors.complemento && <p className="text-red-500 text-sm">{errors.complemento.message}</p>}
                 <div className="flex justify-between gap-4">
                   <Button type="button" onClick={() => setStep(2)} className="w-full py-6 bg-gray-300 text-black hover:bg-gray-400">Voltar</Button>
-                  <Button type="submit" disabled={!isValid} className="w-full py-6 font-bold bg-[#90EE90] hover:bg-[#90EE90]">Cadastrar</Button>
+                  <Button
+                    type="submit"
+                    disabled={!isValid || loading}
+                    className="w-full py-6 font-bold bg-[#90EE90] hover:bg-[#90EE90] flex items-center justify-center"
+                  >
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        Cadastrando...
+                      </div>
+                    ) : (
+                      "Cadastrar"
+                    )}
+                  </Button>
+
                 </div>
               </>
             )}
