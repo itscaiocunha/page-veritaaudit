@@ -15,7 +15,9 @@ import NovaSenha from "./pages/auth/NovaSenha";
 import Validacao from "./pages/auth/Validacao";
 import NotFound from "./pages/NotFound";
 import { Dashboard } from "./pages/Dashboard";
-import Protocolo from "./pages/protocolo/NovoProtocolo";
+import Protocolo from "./pages/protocol/NewProtocol";
+import DataPatrocinador from "./pages/protocol/DataPatrocinador"
+import DataInstituicao from "./pages/protocol/DataInstituicao"
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,8 @@ const App = () => (
 
           <Route path="/dashboard" element={<Dashboard formData={{ name: "Caio" }} />} />
           <Route path="/protocolo"  element={<Protocolo />}/>
+          <Route path="/patrocinador-cadastro"  element={<DataPatrocinador />}/>
+          <Route path="/instituicao-cadastro"  element={<DataInstituicao />}/>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
