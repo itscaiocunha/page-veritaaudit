@@ -14,10 +14,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import api from "@/lib/axios";
 import { isAxiosError } from "axios";
-
-// IMPORTAR O CHECKBOX DO SHADCN UI AQUI
-import { Checkbox } from "@/components/ui/checkbox"; // <<< Assumindo esta importação
-import { Label } from "@/components/ui/label"; // <<< Geralmente o Checkbox do Shadcn usa Label
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 
 // Tipos
