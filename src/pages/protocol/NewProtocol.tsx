@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // 1. Adicionado 'useRef'
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import * as yup from "yup";
+import jsPDF from 'jspdf'; // 2. Biblioteca para criar o PDF
+import html2canvas from 'html2canvas'; // 3. Biblioteca para capturar o HTML como imagem
 
 const Protocolo = () => {
-  // --- ESTADOS DO FORMULÁRIO ---
+  // --- ESTADOS DO FORMULÁRIO (sem alterações) ---
   const [titulo, setTitulo] = useState("");
   const [patrocinador, setPatrocinador] = useState("");
   const [objetivo, setObjetivo] = useState("");
@@ -18,12 +20,15 @@ const Protocolo = () => {
   const [tipoProduto, setTipoProduto] = useState("");
   const [especie, setEspecie] = useState("");
 
-  // --- ESTADO PARA ERROS DE VALIDAÇÃO (COM TIPAGEM) ---
+  // --- ESTADO PARA ERROS DE VALIDAÇÃO (sem alterações) ---
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const navigate = useNavigate();
 
-  // --- ESQUEMA DE VALIDAÇÃO YUP ---
+  // --- NOVA ADIÇÃO: Referência para a div da capa ---
+  const capaRef = useRef<HTMLDivElement>(null);
+
+  // --- ESQUEMA DE VALIDAÇÃO YUP (sem alterações) ---
   const schema = yup.object().shape({
     titulo: yup.string().required("O título é obrigatório"),
     patrocinador: yup.string().required("O patrocinador é obrigatório"),
@@ -37,7 +42,7 @@ const Protocolo = () => {
     especie: yup.string().required("A espécie é obrigatória"),
   });
 
-  // --- LÓGICA ---
+  // --- LÓGICA (sem alterações) ---
   const gerarCodigo = (pat: string) => {
     const numPat = pat.replace(/\D/g, "").padStart(2, '0').slice(0, 2);
     const sequencial = "0001"; // Lógica sequencial pode ser aprimorada
@@ -53,24 +58,19 @@ const Protocolo = () => {
     }
   }, [patrocinador]);
 
-  // --- LÓGICA DE SUBMISSÃO COM VALIDAÇÃO YUP (COM TIPAGEM DE EVENTO) ---
+  // --- LÓGICA DE SUBMISSÃO (sem alterações) ---
   const handleCriar = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     try {
       setErrors({});
       const dadosFormulario = {
         titulo, patrocinador, objetivo, responsavel, produto,
         versaoData, duracao, tipo, tipoProduto, especie,
       };
-
       await schema.validate(dadosFormulario, { abortEarly: false });
-
       console.log("Validação bem-sucedida!");
-      // Salva os dados no localStorage antes de navegar
       localStorage.setItem('protocoloFormData', JSON.stringify(dadosFormulario));
       navigate('/patrocinador-cadastro');
-
     } catch (err) {
       if (err instanceof yup.ValidationError) {
         const newErrors: { [key: string]: string } = {};
@@ -85,7 +85,7 @@ const Protocolo = () => {
     }
   };
 
-  // --- LÓGICA DE LOCAL STORAGE ---
+  // --- LÓGICA DE LOCAL STORAGE (sem alterações) ---
   useEffect(() => {
     const dadosSalvos = localStorage.getItem('protocoloFormData');
     if (dadosSalvos) {
@@ -103,27 +103,58 @@ const Protocolo = () => {
     }
   }, []);
 
+  // --- NOVA ADIÇÃO: Lógica para exportar o PDF ---
+  const handleExportPdf = () => {
+    const input = capaRef.current;
+    if (input) {
+      // Usa html2canvas para capturar a div como uma imagem (canvas)
+      html2canvas(input, {
+        scale: 2, // Melhora a resolução da imagem final
+        useCORS: true,
+      }).then((canvas) => {
+        const imgData = canvas.toDataURL('image/png');
+        // Cria um PDF no formato A4 (portrait)
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'pt',
+          format: 'a4',
+        });
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        // Calcula a proporção para a imagem caber na página A4
+        const ratio = Math.min(pdfWidth / canvas.width, pdfHeight / canvas.height);
+        const imgWidth = canvas.width * ratio;
+        const imgHeight = canvas.height * ratio;
+        // Centraliza a imagem na página
+        const xPos = (pdfWidth - imgWidth) / 2;
+        const yPos = (pdfHeight - imgHeight) / 2;
+        // Adiciona a imagem ao PDF e faz o download
+        pdf.addImage(imgData, 'PNG', xPos, yPos, imgWidth, imgHeight);
+        pdf.save(`protocolo-capa-${codigoEstudo || 'preview'}.pdf`);
+      });
+    }
+  };
+
   // --- RENDERIZAÇÃO ---
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
-
       {/* Formulário à esquerda */}
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-8">
         <div className="w-full max-w-md space-y-4">
           <h1 className="text-3xl font-semibold text-center mb-6">Novo Protocolo</h1>
 
+          {/* FORMULÁRIO (sem alterações) */}
           <form className="space-y-3" onSubmit={handleCriar}>
             <div>
-              <Input type="text" placeholder="Título do Protocolo" className="py-3 h-12 text-base" value={titulo} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitulo(e.target.value)} />
+              <Input type="text" placeholder="Título do Protocolo" className="py-3 h-12 text-base" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
               {errors.titulo && <p className="text-red-500 text-xs mt-1">{errors.titulo}</p>}
             </div>
             <div>
-              <Input type="text" placeholder="Patrocinador" className="py-3 h-12 text-base" value={patrocinador} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPatrocinador(e.target.value)} />
+              <Input type="text" placeholder="Patrocinador" className="py-3 h-12 text-base" value={patrocinador} onChange={(e) => setPatrocinador(e.target.value)} />
               {errors.patrocinador && <p className="text-red-500 text-xs mt-1">{errors.patrocinador}</p>}
             </div>
-            
             <div>
-              <select value={tipo} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTipo(e.target.value)} className="w-full border border-gray-300 rounded-md py-3 px-4 h-12 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full border border-gray-300 rounded-md py-3 px-4 h-12 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 <option value="" disabled>Selecione o tipo de estudo</option>
                 <option value="EC Eficácia">EC Eficácia</option>
                 <option value="EC Segurança">EC Segurança</option>
@@ -131,9 +162,8 @@ const Protocolo = () => {
               </select>
               {errors.tipo && <p className="text-red-500 text-xs mt-1">{errors.tipo}</p>}
             </div>
-            
             <div>
-              <select value={tipoProduto} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTipoProduto(e.target.value)} className="w-full border border-gray-300 rounded-md py-3 px-4 h-12 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <select value={tipoProduto} onChange={(e) => setTipoProduto(e.target.value)} className="w-full border border-gray-300 rounded-md py-3 px-4 h-12 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 <option value="" disabled>Selecione a classe terapêutica</option>
                 <option value="ANABOLIZANTES">Anabolizantes</option>
                 <option value="ANALGESICO">Analgésico</option>
@@ -174,9 +204,8 @@ const Protocolo = () => {
               </select>
               {errors.tipoProduto && <p className="text-red-500 text-xs mt-1">{errors.tipoProduto}</p>}
             </div>
-
             <div>
-              <select value={especie} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setEspecie(e.target.value)} className="w-full border border-gray-300 rounded-md py-3 px-4 h-12 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <select value={especie} onChange={(e) => setEspecie(e.target.value)} className="w-full border border-gray-300 rounded-md py-3 px-4 h-12 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 <option value="" disabled>Selecione a espécie animal</option>
                 <option value="Anfíbio">Anfíbio</option>
                 <option value="Ave">Ave</option>
@@ -212,32 +241,33 @@ const Protocolo = () => {
               </select>
               {errors.especie && <p className="text-red-500 text-xs mt-1">{errors.especie}</p>}
             </div>
-
             <div>
-              <Input type="text" placeholder="Objetivo" className="py-3 h-12 text-base" value={objetivo} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setObjetivo(e.target.value)} />
+              <Input type="text" placeholder="Objetivo" className="py-3 h-12 text-base" value={objetivo} onChange={(e) => setObjetivo(e.target.value)} />
               {errors.objetivo && <p className="text-red-500 text-xs mt-1">{errors.objetivo}</p>}
             </div>
-            
             <div>
-              <Input type="text" placeholder="Responsável pelo Estudo" className="py-3 h-12 text-base" value={responsavel} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResponsavel(e.target.value)} />
+              <Input type="text" placeholder="Responsável pelo Estudo" className="py-3 h-12 text-base" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
               {errors.responsavel && <p className="text-red-500 text-xs mt-1">{errors.responsavel}</p>}
             </div>
-
             <div>
-              <Input type="text" placeholder="Produto Veterinário Investigacional" className="py-3 h-12 text-base" value={produto} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProduto(e.target.value)} />
+              <Input type="text" placeholder="Produto Veterinário Investigacional" className="py-3 h-12 text-base" value={produto} onChange={(e) => setProduto(e.target.value)} />
               {errors.produto && <p className="text-red-500 text-xs mt-1">{errors.produto}</p>}
             </div>
-
             <div>
-              <Input type="text" placeholder="Versão e Data" className="py-3 h-12 text-base" value={versaoData} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVersaoData(e.target.value)} />
+              <Input type="text" placeholder="Versão e Data" className="py-3 h-12 text-base" value={versaoData} onChange={(e) => setVersaoData(e.target.value)} />
               {errors.versaoData && <p className="text-red-500 text-xs mt-1">{errors.versaoData}</p>}
             </div>
-            
             <div>
-              <Input type="text" placeholder="Duração do Estudo Clínico" className="py-3 h-12 text-base" value={duracao} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDuracao(e.target.value)} />
+              <Input type="text" placeholder="Duração do Estudo Clínico" className="py-3 h-12 text-base" value={duracao} onChange={(e) => setDuracao(e.target.value)} />
               {errors.duracao && <p className="text-red-500 text-xs mt-1">{errors.duracao}</p>}
             </div>
-
+            <Button
+              type="button"
+              onClick={handleExportPdf}
+              className="w-full bg-green-400 hover:bg-green-500 text-black py-3 h-12 text-base"
+            >
+            Exportar Capa em PDF
+            </Button>
             <Button type="submit" className="w-full bg-green-400 hover:bg-green-500 text-black py-3 h-12 text-base font-semibold">
               Criar Protocolo
             </Button>
@@ -247,14 +277,14 @@ const Protocolo = () => {
 
       {/* Emulador da capa do protocolo à direita */}
       <div className="w-full md:w-1/2 flex items-center justify-center overflow-hidden p-4">
-        <div className="bg-white shadow-lg p-8 flex flex-col font-serif" style={{ width: 'calc((90vh) * 0.707)', height: 'calc(90vh)', overflow: 'hidden' }}>
-          {/* Cabeçalho */}
+        {/* 5. A 'ref' É ADICIONADA A ESTA DIV PARA QUE POSSA SER CAPTURADA */}
+        <div ref={capaRef} className="bg-white shadow-lg p-8 flex flex-col font-serif" style={{ width: 'calc((90vh) * 0.707)', height: 'calc(90vh)', overflow: 'hidden' }}>
+          {/* Cabeçalho (sem alterações) */}
           <div className="flex justify-between items-start text-[10px]">
             <div className="border border-black w-44 h-20 flex items-center justify-center text-center p-1"><p className="font-bold">LOGO DA CRO/UNIVERSIDADE</p></div>
             <div className="border border-black w-44 h-20 flex items-center justify-center text-center p-1"><p className="font-bold">LOGO DO PATROCINADOR</p></div>
           </div>
-
-          {/* Título Principal */}
+          {/* Título Principal (sem alterações) */}
           <div className="text-center my-4">
             <p className="text-sm">Protocolo</p>
             <p className="text-xs">código do estudo ({codigoEstudo})</p>
@@ -267,24 +297,20 @@ const Protocolo = () => {
               <span className="text-black/80 font-semibold">{titulo || ''}</span>
             </div>
           </div>
-
-          {/* Corpo do Formulário */}
+          {/* Corpo do Formulário (sem alterações) */}
           <div className="flex-grow text-sm">
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">OBJETIVO</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{objetivo || ''}</span></div></div>
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">PATROCINADOR</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{patrocinador || ''}</span></div></div>
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">RESPONSÁVEL PELO ESTUDO</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{responsavel || ''}</span></div></div>
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">CÓDIGO DO ESTUDO</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{codigoEstudo || ''}</span></div></div>
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0 leading-tight">PRODUTO VETERINÁRIO<br />INVESTIGACIONAL</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{produto || ''}</span></div></div>
-            
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">CLASSE TERAPÊUTICA</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{tipoProduto || ''}</span></div></div>
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">ESPÉCIE(S) ALVO</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{especie || ''}</span></div></div>
-
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">VERSÃO E DATA</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{versaoData || ''}</span></div></div>
             <div className="flex items-start mt-2"><p className="font-bold w-60 shrink-0">CONFORMIDADE ÉTICA:</p><p className="text-xs ml-2">Este protocolo será submetido a uma comissão de ética no uso de animais e só será iniciado após aprovação.</p></div>
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">DURAÇÃO DO ESTUDO CLÍNICO:</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{duracao || ''}</span></div></div>
           </div>
-          
-          {/* Rodapé */}
+          {/* Rodapé (sem alterações) */}
           <div className="mt-auto">
             <p className="text-[9px] text-justify my-3 leading-tight">Este documento contém informações confidenciais e sigilosas pertencentes ao Patrocinador. Visto que, para o bom e fiel desempenho das atividades do Responsável pelo estudo, faz-se necessário a disponibilidade de acesso às informações técnicas e outras relacionadas ao produto veterinário investigacional, assume-se assim o compromisso de manter tais informações confidenciais e em não as divulgar a terceiros (exceto se exigido por legislação aplicável), nem as utilizará para fins não autorizados. Em caso de suspeita ou quebra real desta obrigação, o Patrocinador deverá ser imediatamente notificada.</p>
             <div className="text-center">
