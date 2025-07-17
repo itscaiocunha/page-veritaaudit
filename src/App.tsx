@@ -18,6 +18,8 @@ import { Dashboard } from "./pages/Dashboard";
 import Protocolo from "./pages/protocol/NewProtocol";
 import DataPatrocinador from "./pages/protocol/DataPatrocinador"
 import DataInstituicao from "./pages/protocol/DataInstituicao"
+import LocalProtocol from "./pages/protocol/LocalProtocol";
+import ProdutoVeterinario from "./pages/protocol/ProdutoVeterinario";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +45,8 @@ const App = () => (
           <Route path="/protocolo"  element={<Protocolo />}/>
           <Route path="/patrocinador-cadastro"  element={<DataPatrocinador />}/>
           <Route path="/instituicao-cadastro"  element={<DataInstituicao />}/>
+          <Route path="/local-protocol"  element={<LocalProtocol />}/>
+          <Route path="/produto-veterinario"  element={<ProdutoVeterinario />}/>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
