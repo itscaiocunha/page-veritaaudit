@@ -89,7 +89,7 @@ const ProdutoVeterinario = () => {
         await new Promise(resolve => setTimeout(resolve, 500));
         
         setIsSubmitting(false);
-        navigate('/capa'); // Ou para uma página de sucesso/listagem
+        navigate('/capa/00-0001-25');
     };
 
     const toggleItem = (index: number) => {
