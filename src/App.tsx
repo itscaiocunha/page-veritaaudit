@@ -14,12 +14,14 @@ import RecuperarSenha from "./pages/auth/Recuperar";
 import NovaSenha from "./pages/auth/NovaSenha";
 import Validacao from "./pages/auth/Validacao";
 import NotFound from "./pages/NotFound";
-import { Dashboard } from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard";
 import Protocolo from "./pages/protocol/NewProtocol";
 import DataPatrocinador from "./pages/protocol/DataPatrocinador"
 import DataInstituicao from "./pages/protocol/DataInstituicao"
 import LocalProtocol from "./pages/protocol/LocalProtocol";
 import ProdutoVeterinario from "./pages/protocol/ProdutoVeterinario";
+import CapaPDF from "./pages/protocol/CapaPDF";
+import FormularioIntroducao from "./pages/protocol/FormularioIntroducao";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +49,8 @@ const App = () => (
           <Route path="/instituicao-cadastro"  element={<DataInstituicao />}/>
           <Route path="/local-protocol"  element={<LocalProtocol />}/>
           <Route path="/produto-veterinario"  element={<ProdutoVeterinario />}/>
+          <Route path="/capa/:codigoEstudo" element={<CapaPDF/>}/>
+          <Route path="/introducao" element={<FormularioIntroducao/>}/>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

@@ -1,13 +1,13 @@
-import { useState, useEffect, useRef } from "react"; // 1. Adicionado 'useRef'
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import * as yup from "yup";
-import jsPDF from 'jspdf'; // 2. Biblioteca para criar o PDF
-import html2canvas from 'html2canvas'; // 3. Biblioteca para capturar o HTML como imagem
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const Protocolo = () => {
-  // --- ESTADOS DO FORMULÁRIO (sem alterações) ---
+  // --- Estados do Formulário ---
   const [titulo, setTitulo] = useState("");
   const [patrocinador, setPatrocinador] = useState("");
   const [objetivo, setObjetivo] = useState("");
@@ -20,15 +20,15 @@ const Protocolo = () => {
   const [tipoProduto, setTipoProduto] = useState("");
   const [especie, setEspecie] = useState("");
 
-  // --- ESTADO PARA ERROS DE VALIDAÇÃO (sem alterações) ---
+  // --- Estado para Erros de Validação ---
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const navigate = useNavigate();
 
-  // --- NOVA ADIÇÃO: Referência para a div da capa ---
+  // --- Referência para a div da capa para exportação em PDF ---
   const capaRef = useRef<HTMLDivElement>(null);
 
-  // --- ESQUEMA DE VALIDAÇÃO YUP (sem alterações) ---
+  // --- Esquema de Validação Yup ---
   const schema = yup.object().shape({
     titulo: yup.string().required("O título é obrigatório"),
     patrocinador: yup.string().required("O patrocinador é obrigatório"),
@@ -42,10 +42,10 @@ const Protocolo = () => {
     especie: yup.string().required("A espécie é obrigatória"),
   });
 
-  // --- LÓGICA (sem alterações) ---
+  // --- Lógica para gerar o código do estudo ---
   const gerarCodigo = (pat: string) => {
     const numPat = pat.replace(/\D/g, "").padStart(2, '0').slice(0, 2);
-    const sequencial = "0001"; // Lógica sequencial pode ser aprimorada
+    const sequencial = "0001"; // Lógica sequencial pode ser aprimorada no futuro
     const ano = new Date().getFullYear().toString().slice(-2);
     return `${numPat}-${sequencial}-${ano}`;
   };
@@ -58,7 +58,7 @@ const Protocolo = () => {
     }
   }, [patrocinador]);
 
-  // --- LÓGICA DE SUBMISSÃO (sem alterações) ---
+  // --- Lógica de Submissão e Salvamento ---
   const handleCriar = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
@@ -66,11 +66,25 @@ const Protocolo = () => {
       const dadosFormulario = {
         titulo, patrocinador, objetivo, responsavel, produto,
         versaoData, duracao, tipo, tipoProduto, especie,
+        codigoEstudo: gerarCodigo(patrocinador) // Garante que o código seja salvo
       };
+
       await schema.validate(dadosFormulario, { abortEarly: false });
-      console.log("Validação bem-sucedida!");
-      localStorage.setItem('protocoloFormData', JSON.stringify(dadosFormulario));
+      
+      console.log("Validação da Etapa 1 bem-sucedida!");
+
+      // Busca o objeto principal do localStorage ou cria um novo se não existir
+      const fullProtocolData = JSON.parse(localStorage.getItem('fullProtocolData') || '{}');
+
+      // Atualiza a seção 'protocolo' com os dados deste formulário
+      fullProtocolData.protocolo = dadosFormulario;
+
+      // Salva o objeto completo de volta no localStorage
+      localStorage.setItem('fullProtocolData', JSON.stringify(fullProtocolData));
+
+      // Navega para a próxima etapa
       navigate('/patrocinador-cadastro');
+
     } catch (err) {
       if (err instanceof yup.ValidationError) {
         const newErrors: { [key: string]: string } = {};
@@ -85,35 +99,35 @@ const Protocolo = () => {
     }
   };
 
-  // --- LÓGICA DE LOCAL STORAGE (sem alterações) ---
+  // --- Lógica para Carregar Dados Salvos do LocalStorage ---
   useEffect(() => {
-    const dadosSalvos = localStorage.getItem('protocoloFormData');
+    const fullProtocolData = JSON.parse(localStorage.getItem('fullProtocolData') || '{}');
+    const dadosSalvos = fullProtocolData.protocolo;
+
     if (dadosSalvos) {
-      const dadosParseados = JSON.parse(dadosSalvos);
-      setTitulo(dadosParseados.titulo || "");
-      setPatrocinador(dadosParseados.patrocinador || "");
-      setTipo(dadosParseados.tipo || "");
-      setResponsavel(dadosParseados.responsavel || "");
-      setObjetivo(dadosParseados.objetivo || "");
-      setProduto(dadosParseados.produto || "");
-      setVersaoData(dadosParseados.versaoData || "");
-      setDuracao(dadosParseados.duracao || "");
-      setTipoProduto(dadosParseados.tipoProduto || "");
-      setEspecie(dadosParseados.especie || "");
+      setTitulo(dadosSalvos.titulo || "");
+      setPatrocinador(dadosSalvos.patrocinador || "");
+      setTipo(dadosSalvos.tipo || "");
+      setResponsavel(dadosSalvos.responsavel || "");
+      setObjetivo(dadosSalvos.objetivo || "");
+      setProduto(dadosSalvos.produto || "");
+      setVersaoData(dadosSalvos.versaoData || "");
+      setDuracao(dadosSalvos.duracao || "");
+      setTipoProduto(dadosSalvos.tipoProduto || "");
+      setEspecie(dadosSalvos.especie || "");
+      // O código do estudo será recalculado pelo outro useEffect
     }
   }, []);
 
-  // --- NOVA ADIÇÃO: Lógica para exportar o PDF ---
+  // --- Lógica para Exportar a Capa em PDF ---
   const handleExportPdf = () => {
     const input = capaRef.current;
     if (input) {
-      // Usa html2canvas para capturar a div como uma imagem (canvas)
       html2canvas(input, {
-        scale: 2, // Melhora a resolução da imagem final
+        scale: 2,
         useCORS: true,
       }).then((canvas) => {
         const imgData = canvas.toDataURL('image/png');
-        // Cria um PDF no formato A4 (portrait)
         const pdf = new jsPDF({
           orientation: 'portrait',
           unit: 'pt',
@@ -121,19 +135,47 @@ const Protocolo = () => {
         });
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
-        // Calcula a proporção para a imagem caber na página A4
         const ratio = Math.min(pdfWidth / canvas.width, pdfHeight / canvas.height);
         const imgWidth = canvas.width * ratio;
         const imgHeight = canvas.height * ratio;
-        // Centraliza a imagem na página
         const xPos = (pdfWidth - imgWidth) / 2;
         const yPos = (pdfHeight - imgHeight) / 2;
-        // Adiciona a imagem ao PDF e faz o download
         pdf.addImage(imgData, 'PNG', xPos, yPos, imgWidth, imgHeight);
         pdf.save(`protocolo-capa-${codigoEstudo || 'preview'}.pdf`);
       });
     }
   };
+
+  useEffect(() => {
+    const dadosFormulario = {
+      titulo,
+      patrocinador,
+      objetivo,
+      responsavel,
+      produto,
+      versaoData,
+      duracao,
+      tipo,
+      tipoProduto,
+      especie,
+      codigoEstudo: gerarCodigo(patrocinador), // Sempre recalculado
+    };
+
+    const fullProtocolData = JSON.parse(localStorage.getItem('fullProtocolData') || '{}');
+    fullProtocolData.protocolo = dadosFormulario;
+    localStorage.setItem('fullProtocolData', JSON.stringify(fullProtocolData));
+  }, [
+    titulo,
+    patrocinador,
+    objetivo,
+    responsavel,
+    produto,
+    versaoData,
+    duracao,
+    tipo,
+    tipoProduto,
+    especie,
+  ]);
 
   // --- RENDERIZAÇÃO ---
   return (
@@ -142,8 +184,6 @@ const Protocolo = () => {
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-8">
         <div className="w-full max-w-md space-y-4">
           <h1 className="text-3xl font-semibold text-center mb-6">Novo Protocolo</h1>
-
-          {/* FORMULÁRIO (sem alterações) */}
           <form className="space-y-3" onSubmit={handleCriar}>
             <div>
               <Input type="text" placeholder="Título do Protocolo" className="py-3 h-12 text-base" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
@@ -277,14 +317,13 @@ const Protocolo = () => {
 
       {/* Emulador da capa do protocolo à direita */}
       <div className="w-full md:w-1/2 flex items-center justify-center overflow-hidden p-4">
-        {/* 5. A 'ref' É ADICIONADA A ESTA DIV PARA QUE POSSA SER CAPTURADA */}
         <div ref={capaRef} className="bg-white shadow-lg p-8 flex flex-col font-serif" style={{ width: 'calc((90vh) * 0.707)', height: 'calc(90vh)', overflow: 'hidden' }}>
-          {/* Cabeçalho (sem alterações) */}
+          {/* Cabeçalho */}
           <div className="flex justify-between items-start text-[10px]">
             <div className="border border-black w-44 h-20 flex items-center justify-center text-center p-1"><p className="font-bold">LOGO DA CRO/UNIVERSIDADE</p></div>
             <div className="border border-black w-44 h-20 flex items-center justify-center text-center p-1"><p className="font-bold">LOGO DO PATROCINADOR</p></div>
           </div>
-          {/* Título Principal (sem alterações) */}
+          {/* Título Principal */}
           <div className="text-center my-4">
             <p className="text-sm">Protocolo</p>
             <p className="text-xs">código do estudo ({codigoEstudo})</p>
@@ -297,7 +336,7 @@ const Protocolo = () => {
               <span className="text-black/80 font-semibold">{titulo || ''}</span>
             </div>
           </div>
-          {/* Corpo do Formulário (sem alterações) */}
+          {/* Corpo do Formulário */}
           <div className="flex-grow text-sm">
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">OBJETIVO</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{objetivo || ''}</span></div></div>
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">PATROCINADOR</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{patrocinador || ''}</span></div></div>
@@ -310,11 +349,10 @@ const Protocolo = () => {
             <div className="flex items-start mt-2"><p className="font-bold w-60 shrink-0">CONFORMIDADE ÉTICA:</p><p className="text-xs ml-2">Este protocolo será submetido a uma comissão de ética no uso de animais e só será iniciado após aprovação.</p></div>
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">DURAÇÃO DO ESTUDO CLÍNICO:</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{duracao || ''}</span></div></div>
           </div>
-          {/* Rodapé (sem alterações) */}
+          {/* Rodapé */}
           <div className="mt-auto">
             <p className="text-[9px] text-justify my-3 leading-tight">Este documento contém informações confidenciais e sigilosas pertencentes ao Patrocinador. Visto que, para o bom e fiel desempenho das atividades do Responsável pelo estudo, faz-se necessário a disponibilidade de acesso às informações técnicas e outras relacionadas ao produto veterinário investigacional, assume-se assim o compromisso de manter tais informações confidenciais e em não as divulgar a terceiros (exceto se exigido por legislação aplicável), nem as utilizará para fins não autorizados. Em caso de suspeita ou quebra real desta obrigação, o Patrocinador deverá ser imediatamente notificada.</p>
             <div className="text-center">
-              <p className="font-bold text-sm">PÁGINA DE ASSINATURAS</p>
               <p className="text-[8px] text-justify leading-tight">Este documento contém informações confidenciais e não pode ser objeto de publicação, cópia ou de compartilhamento ou uso impróprio desse conteúdo fora do ambiente das empresas Responsável pelo estudo (CRO) e o Patrocinador sem prévio consentimento por escrito e expressamente proibido (exceto se exigido por legislação aplicável).</p>
             </div>
           </div>

@@ -1,19 +1,18 @@
-import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea"; // Importando Textarea para campos maiores
+import { Textarea } from "@/components/ui/textarea";
 import { Trash2, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // --- Schema de Validação e Tipos ---
 
 // Schema para um único produto veterinário
 const produtoSchema = yup.object().shape({
-    id: yup.number(),
     identificacao: yup.string().required("A Identificação/Código é obrigatória."),
     principioAtivo: yup.string().required("O Princípio Ativo é obrigatório."),
     concentracao: yup.string().required("A Concentração é obrigatória."),
@@ -74,11 +73,23 @@ const ProdutoVeterinario = () => {
 
     const handleSalvar = async (data: FormValues) => {
         setIsSubmitting(true);
-        console.log("Dados dos Produtos Veterinários:", data);
+        console.log("Dados Finais (Produtos Veterinários):", data);
+
+        try {
+            const existingDataString = localStorage.getItem('dadosProdutoVeterinario');
+            const existingData = existingDataString ? JSON.parse(existingDataString) : [];
+            existingData.push(data);
+            localStorage.setItem('dadosProdutoVeterinario', JSON.stringify(existingData));
+            console.log("Dados salvos no localStorage com a chave 'dadosProdutoVeterinario'.");
+        } catch (error) {
+            console.error("Erro ao salvar os dados no localStorage:", error);
+        }
+
         // Simula uma chamada de API
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        alert("Produtos salvos com sucesso!");
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         setIsSubmitting(false);
+        navigate('/capa'); // Ou para uma página de sucesso/listagem
     };
 
     const toggleItem = (index: number) => {
@@ -99,7 +110,7 @@ const ProdutoVeterinario = () => {
                             type="button"
                             variant="outline"
                             className="bg-[#90EE90] hover:bg-[#7CCD7C] text-white font-bold"
-                            onClick={() => append({ id: Date.now(), ...newEmptyProduct })}
+                            onClick={() => append(newEmptyProduct)}
                         >
                             <Plus className="h-4 w-4 mr-2" />
                             Adicionar Produto
@@ -204,7 +215,7 @@ const ProdutoVeterinario = () => {
                     {/* --- BOTÕES DE AÇÃO --- */}
                     <div className="flex justify-end items-center gap-4 pt-6 border-t">
                         <Button type="submit" className="bg-[#90EE90] hover:bg-[#7CCD7C] text-white font-bold px-8 py-3 text-lg h-auto rounded-md" disabled={isSubmitting}>
-                            {isSubmitting ? 'Salvando...' : 'Salvar Informações dos Produtos'}
+                            {isSubmitting ? 'Salvando...' : 'Salvar e Finalizar Protocolo'}
                         </Button>
                     </div>
                 </form>

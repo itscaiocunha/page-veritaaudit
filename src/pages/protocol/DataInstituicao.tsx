@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { useState, useEffect } from "react";
+import { useForm, useFieldArray, Controller, FieldPath } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ const LoadingSpinner = () => (
 );
 
 // Schema reutilizável para o endereço
-const addressSchema = {
+const addressSchema = yup.object().shape({
     cep: yup.string().matches(cepRegExp, "CEP inválido. Use XXXXX-XXX").required("O CEP é obrigatório."),
     logradouro: yup.string().required("O logradouro é obrigatório."),
     numero: yup.string().required("O número é obrigatório."),
@@ -39,17 +39,16 @@ const addressSchema = {
     bairro: yup.string().required("O bairro é obrigatório."),
     cidade: yup.string().required("A cidade é obrigatória."),
     uf: yup.string().required("O UF é obrigatório."),
-};
+});
 
 const investigadorSchema = yup.object().shape({
-    id: yup.number(),
     nome: yup.string().required("O nome é obrigatório."),
     formacao: yup.string().required("A formação é obrigatória."),
     telefone: yup.string().matches(phoneRegExp, "Telefone inválido.").required("O telefone é obrigatório."),
     email: yup.string().email("Digite um e-mail válido.").required("O e-mail é obrigatório."),
     registro: yup.string().required("O N° de registro é obrigatório."),
     expanded: yup.boolean(),
-    ...addressSchema
+    endereco: addressSchema
 });
 
 const validationSchema = yup.object().shape({
@@ -57,12 +56,13 @@ const validationSchema = yup.object().shape({
     nome: yup.string().required("O nome da instituição é obrigatório."),
     telefone: yup.string().matches(phoneRegExp, "Telefone inválido.").required("O telefone é obrigatório."),
     registroCiaep: yup.string().required("O N° de Registro CIAEP é obrigatório."),
-    ...addressSchema
+    endereco: addressSchema
   }),
   investigador: investigadorSchema,
   equipeInstituicao: yup.array().of(investigadorSchema).min(1, "É necessário adicionar pelo menos um membro à equipe."),
 });
 
+type FormValues = yup.InferType<typeof validationSchema>;
 
 // --- COMPONENTE PRINCIPAL ---
 const FormularioInstituicao = () => {
@@ -76,13 +76,14 @@ const FormularioInstituicao = () => {
     const [loadingCep, setLoadingCep] = useState<string | null>(null);
 
     const defaultAddress = { cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" };
+    const defaultInvestigador = { nome: "", formacao: "", telefone: "", email: "", registro: "", expanded: true, endereco: defaultAddress };
 
-    const { register, control, handleSubmit, formState: { errors }, setValue, watch, setFocus } = useForm({
+    const { register, control, handleSubmit, formState: { errors }, setValue, watch, setFocus } = useForm<FormValues>({
         resolver: yupResolver(validationSchema),
         defaultValues: {
-            instituicao: { nome: "", telefone: "", registroCiaep: "", ...defaultAddress },
-            investigador: { nome: "", formacao: "", telefone: "", email: "", registro: "", ...defaultAddress },
-            equipeInstituicao: [{ id: 1, nome: "", formacao: "", registro: "", telefone: "", email: "", expanded: true, ...defaultAddress }],
+            instituicao: { nome: "", telefone: "", registroCiaep: "", endereco: defaultAddress },
+            investigador: defaultInvestigador,
+            equipeInstituicao: [{ ...defaultInvestigador }],
         }
     });
 
@@ -91,12 +92,23 @@ const FormularioInstituicao = () => {
         name: "equipeInstituicao",
     });
 
-    const handleFinalizar = async (data: any) => {
+    const onSubmit = async (data: FormValues) => {
         setIsSubmitting(true);
         console.log("Dados da Instituição de Pesquisa:", data);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        alert("Formulário salvo com sucesso!");
+
+        try {
+            const existingDataString = localStorage.getItem('dadosInstituicao');
+            const existingData = existingDataString ? JSON.parse(existingDataString) : [];
+            existingData.push(data);
+            localStorage.setItem('dadosInstituicao', JSON.stringify(existingData));
+            console.log("Dados salvos no localStorage com a chave 'dadosInstituicao'.");
+        } catch (error) {
+            console.error("Erro ao salvar os dados no localStorage:", error);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
         setIsSubmitting(false);
+        navigate('/local-protocol');
     };
 
     const handleCepLookup = async (cep: string, basePath: string) => {
@@ -109,18 +121,19 @@ const FormularioInstituicao = () => {
             const data = await response.json();
             if (data.erro) throw new Error("CEP não encontrado.");
 
-            setValue(`${basePath}.logradouro`, data.logradouro, { shouldValidate: true });
-            setValue(`${basePath}.bairro`, data.bairro, { shouldValidate: true });
-            setValue(`${basePath}.cidade`, data.localidade, { shouldValidate: true });
-            setValue(`${basePath}.uf`, data.uf, { shouldValidate: true });
-            setFocus(`${basePath}.numero`);
+            setValue(`${basePath}.endereco.logradouro` as FieldPath<FormValues>, data.logradouro, { shouldValidate: true });
+            setValue(`${basePath}.endereco.bairro` as FieldPath<FormValues>, data.bairro, { shouldValidate: true });
+            setValue(`${basePath}.endereco.cidade` as FieldPath<FormValues>, data.localidade, { shouldValidate: true });
+            setValue(`${basePath}.endereco.uf` as FieldPath<FormValues>, data.uf, { shouldValidate: true });
+            setFocus(`${basePath}.endereco.numero` as FieldPath<FormValues>);
 
         } catch (error) {
             console.error("Erro ao buscar CEP:", error);
-            setValue(`${basePath}.logradouro`, "", { shouldValidate: true });
-            setValue(`${basePath}.bairro`, "", { shouldValidate: true });
-            setValue(`${basePath}.cidade`, "", { shouldValidate: true });
-            setValue(`${basePath}.uf`, "", { shouldValidate: true });
+            // Clear fields on error
+            setValue(`${basePath}.endereco.logradouro` as FieldPath<FormValues>, "", { shouldValidate: true });
+            setValue(`${basePath}.endereco.bairro` as FieldPath<FormValues>, "", { shouldValidate: true });
+            setValue(`${basePath}.endereco.cidade` as FieldPath<FormValues>, "", { shouldValidate: true });
+            setValue(`${basePath}.endereco.uf` as FieldPath<FormValues>, "", { shouldValidate: true });
         } finally {
             setLoadingCep(null);
         }
@@ -134,21 +147,21 @@ const FormularioInstituicao = () => {
         setValue(`equipeInstituicao.${index}.expanded`, !watch(`equipeInstituicao.${index}.expanded`));
     };
 
-    // Função para renderizar os campos de endereço, evitando repetição de código
     const renderAddressFields = (basePath: string, fieldErrors: any) => (
         <div className="grid grid-cols-1 md:grid-cols-6 gap-4 pt-4 mt-4 border-t">
             <div className="md:col-span-2">
                 <Label><RequiredField>CEP</RequiredField></Label>
                 <div className="flex items-center gap-2">
                     <Controller
-                        name={`${basePath}.cep`}
+                        name={`${basePath}.endereco.cep` as FieldPath<FormValues>}
                         control={control}
-                        render={({ field }) => (
+                        render={({ field: { onChange, onBlur, value, ref } }) => (
                             <Input
-                                {...field}
-                                onChange={(e) => field.onChange(applyCepMask(e.target.value))}
+                                ref={ref}
+                                value={value || ''}
+                                onChange={(e) => onChange(applyCepMask(e.target.value))}
                                 onBlur={(e) => {
-                                    field.onBlur();
+                                    onBlur();
                                     handleCepLookup(e.target.value, basePath);
                                 }}
                                 maxLength={9}
@@ -157,14 +170,14 @@ const FormularioInstituicao = () => {
                     />
                     {loadingCep === basePath && <LoadingSpinner />}
                 </div>
-                <p className="text-red-500 text-sm mt-1">{fieldErrors?.cep?.message}</p>
+                <p className="text-red-500 text-sm mt-1">{fieldErrors?.endereco?.cep?.message}</p>
             </div>
-            <div className="md:col-span-4"><Label><RequiredField>Logradouro</RequiredField></Label><Input {...register(`${basePath}.logradouro`)} /><p className="text-red-500 text-sm mt-1">{fieldErrors?.logradouro?.message}</p></div>
-            <div className="md:col-span-2"><Label><RequiredField>Número</RequiredField></Label><Input {...register(`${basePath}.numero`)} /><p className="text-red-500 text-sm mt-1">{fieldErrors?.numero?.message}</p></div>
-            <div className="md:col-span-4"><Label>Complemento</Label><Input {...register(`${basePath}.complemento`)} /><p className="text-red-500 text-sm mt-1">{fieldErrors?.complemento?.message}</p></div>
-            <div className="md:col-span-2"><Label><RequiredField>Bairro</RequiredField></Label><Input {...register(`${basePath}.bairro`)} /><p className="text-red-500 text-sm mt-1">{fieldErrors?.bairro?.message}</p></div>
-            <div className="md:col-span-3"><Label><RequiredField>Cidade</RequiredField></Label><Input {...register(`${basePath}.cidade`)} /><p className="text-red-500 text-sm mt-1">{fieldErrors?.cidade?.message}</p></div>
-            <div className="md:col-span-1"><Label><RequiredField>UF</RequiredField></Label><Input {...register(`${basePath}.uf`)} /><p className="text-red-500 text-sm mt-1">{fieldErrors?.uf?.message}</p></div>
+            <div className="md:col-span-4"><Label><RequiredField>Logradouro</RequiredField></Label><Input {...register(`${basePath}.endereco.logradouro` as FieldPath<FormValues>)} /><p className="text-red-500 text-sm mt-1">{fieldErrors?.endereco?.logradouro?.message}</p></div>
+            <div className="md:col-span-2"><Label><RequiredField>Número</RequiredField></Label><Input {...register(`${basePath}.endereco.numero` as FieldPath<FormValues>)} /><p className="text-red-500 text-sm mt-1">{fieldErrors?.endereco?.numero?.message}</p></div>
+            <div className="md:col-span-4"><Label>Complemento</Label><Input {...register(`${basePath}.endereco.complemento` as FieldPath<FormValues>)} /><p className="text-red-500 text-sm mt-1">{fieldErrors?.endereco?.complemento?.message}</p></div>
+            <div className="md:col-span-2"><Label><RequiredField>Bairro</RequiredField></Label><Input {...register(`${basePath}.endereco.bairro` as FieldPath<FormValues>)} /><p className="text-red-500 text-sm mt-1">{fieldErrors?.endereco?.bairro?.message}</p></div>
+            <div className="md:col-span-3"><Label><RequiredField>Cidade</RequiredField></Label><Input {...register(`${basePath}.endereco.cidade` as FieldPath<FormValues>)} /><p className="text-red-500 text-sm mt-1">{fieldErrors?.endereco?.cidade?.message}</p></div>
+            <div className="md:col-span-1"><Label><RequiredField>UF</RequiredField></Label><Input {...register(`${basePath}.endereco.uf` as FieldPath<FormValues>)} /><p className="text-red-500 text-sm mt-1">{fieldErrors?.endereco?.uf?.message}</p></div>
         </div>
     );
 
@@ -174,7 +187,7 @@ const FormularioInstituicao = () => {
             <div className="w-full max-w-4xl rounded-lg p-8 bg-white shadow-md">
                 <h2 className="text-2xl font-semibold text-center mb-6">Informações da Instituição de Pesquisa</h2>
                 
-                <form onSubmit={handleSubmit(handleFinalizar)} className="space-y-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     {/* Seção Instituição de Pesquisa */}
                     <div className="border rounded-lg p-4 shadow-sm bg-white">
                         <div className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-2 -m-2 rounded" onClick={() => toggleSection('instituicao')}>
@@ -185,7 +198,7 @@ const FormularioInstituicao = () => {
                             <div className="mt-4 space-y-4 pt-4 border-t">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="md:col-span-2"><Label><RequiredField>Identificação/Nome</RequiredField></Label><Input {...register("instituicao.nome")} /><p className="text-red-500 text-sm mt-1">{errors.instituicao?.nome?.message}</p></div>
-                                    <div><Label><RequiredField>Telefone</RequiredField></Label><Controller name="instituicao.telefone" control={control} render={({ field }) => ( <Input {...field} onChange={(e) => field.onChange(applyPhoneMask(e.target.value))} type="tel" maxLength={15} /> )}/><p className="text-red-500 text-sm mt-1">{errors.instituicao?.telefone?.message}</p></div>
+                                    <div><Label><RequiredField>Telefone</RequiredField></Label><Controller name="instituicao.telefone" control={control} render={({ field: { onChange, onBlur, value, ref } }) => ( <Input ref={ref} value={value || ''} onChange={(e) => onChange(applyPhoneMask(e.target.value))} onBlur={onBlur} type="tel" maxLength={15} /> )}/><p className="text-red-500 text-sm mt-1">{errors.instituicao?.telefone?.message}</p></div>
                                     <div><Label><RequiredField>N° Registro CIAEP</RequiredField></Label><Input {...register("instituicao.registroCiaep")} /><p className="text-red-500 text-sm mt-1">{errors.instituicao?.registroCiaep?.message}</p></div>
                                 </div>
                                 {renderAddressFields('instituicao', errors.instituicao)}
@@ -204,7 +217,7 @@ const FormularioInstituicao = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div><Label><RequiredField>Identificação/Nome</RequiredField></Label><Input {...register("investigador.nome")} /><p className="text-red-500 text-sm mt-1">{errors.investigador?.nome?.message}</p></div>
                                     <div><Label><RequiredField>Formação</RequiredField></Label><Input {...register("investigador.formacao")} /><p className="text-red-500 text-sm mt-1">{errors.investigador?.formacao?.message}</p></div>
-                                    <div><Label><RequiredField>Telefone</RequiredField></Label><Controller name="investigador.telefone" control={control} render={({ field }) => ( <Input {...field} onChange={(e) => field.onChange(applyPhoneMask(e.target.value))} type="tel" maxLength={15} /> )}/><p className="text-red-500 text-sm mt-1">{errors.investigador?.telefone?.message}</p></div>
+                                    <div><Label><RequiredField>Telefone</RequiredField></Label><Controller name="investigador.telefone" control={control} render={({ field: { onChange, onBlur, value, ref } }) => ( <Input ref={ref} value={value || ''} onChange={(e) => onChange(applyPhoneMask(e.target.value))} onBlur={onBlur} type="tel" maxLength={15} /> )}/><p className="text-red-500 text-sm mt-1">{errors.investigador?.telefone?.message}</p></div>
                                     <div><Label><RequiredField>E-mail</RequiredField></Label><Input {...register("investigador.email")} /><p className="text-red-500 text-sm mt-1">{errors.investigador?.email?.message}</p></div>
                                     <div><Label><RequiredField>N° de Registro</RequiredField></Label><Input {...register("investigador.registro")} /><p className="text-red-500 text-sm mt-1">{errors.investigador?.registro?.message}</p></div>
                                 </div>
@@ -217,29 +230,29 @@ const FormularioInstituicao = () => {
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
                             <label className="text-lg font-semibold"><RequiredField>Equipe Técnica da Instituição</RequiredField></label>
-                            <Button type="button" variant="outline" className="bg-[#90EE90] hover:bg-[#7CCD7C] text-white font-bold" onClick={() => appendEquipe({ id: Date.now(), nome: "", formacao: "", registro: "", telefone: "", email: "", expanded: true, ...defaultAddress })}><Plus className="h-4 w-4 mr-2" /> Adicionar Membro</Button>
+                            <Button type="button" variant="outline" className="bg-[#90EE90] hover:bg-[#7CCD7C] text-white font-bold" onClick={() => appendEquipe({ ...defaultInvestigador })}><Plus className="h-4 w-4 mr-2" /> Adicionar Membro</Button>
                         </div>
                         {equipeFields.map((membro, index) => (
                              <div key={membro.id} className="border rounded-lg p-4 shadow-sm bg-white">
-                                 <div className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-2 -m-2 rounded" onClick={() => toggleArrayItem(index)}>
-                                     <h3 className="font-medium text-gray-800">{watch(`equipeInstituicao.${index}.nome`) || `Novo Membro da Equipe`}</h3>
-                                     {watch(`equipeInstituicao.${index}.expanded`) ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
-                                 </div>
-                                 {watch(`equipeInstituicao.${index}.expanded`) && (
-                                    <div className="mt-4 space-y-4 pt-4 border-t">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div><Label><RequiredField>Identificação/Nome</RequiredField></Label><Input {...register(`equipeInstituicao.${index}.nome`)} /><p className="text-red-500 text-sm mt-1">{errors.equipeInstituicao?.[index]?.nome?.message}</p></div>
-                                            <div><Label><RequiredField>Formação</RequiredField></Label><Input {...register(`equipeInstituicao.${index}.formacao`)} /><p className="text-red-500 text-sm mt-1">{errors.equipeInstituicao?.[index]?.formacao?.message}</p></div>
-                                            <div><Label><RequiredField>Telefone</RequiredField></Label><Controller name={`equipeInstituicao.${index}.telefone`} control={control} render={({ field }) => ( <Input {...field} onChange={(e) => field.onChange(applyPhoneMask(e.target.value))} type="tel" maxLength={15} /> )}/><p className="text-red-500 text-sm mt-1">{errors.equipeInstituicao?.[index]?.telefone?.message}</p></div>
-                                            <div><Label><RequiredField>E-mail</RequiredField></Label><Input {...register(`equipeInstituicao.${index}.email`)} /><p className="text-red-500 text-sm mt-1">{errors.equipeInstituicao?.[index]?.email?.message}</p></div>
-                                            <div><Label><RequiredField>N° de Registro</RequiredField></Label><Input {...register(`equipeInstituicao.${index}.registro`)} /><p className="text-red-500 text-sm mt-1">{errors.equipeInstituicao?.[index]?.registro?.message}</p></div>
-                                        </div>
-                                        {renderAddressFields(`equipeInstituicao.${index}`, errors.equipeInstituicao?.[index])}
-                                        <div className="flex justify-end mt-2">
-                                            <Button type="button" variant="ghost" size="sm" className="text-red-500 hover:text-red-700" onClick={() => removeEquipe(index)}><Trash2 className="h-4 w-4 mr-1.5" /> Remover</Button>
-                                        </div>
-                                    </div>
-                                 )}
+                                  <div className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-2 -m-2 rounded" onClick={() => toggleArrayItem(index)}>
+                                      <h3 className="font-medium text-gray-800">{watch(`equipeInstituicao.${index}.nome`) || `Novo Membro da Equipe`}</h3>
+                                      <div className="flex items-center">
+                                          <Button type="button" variant="ghost" size="sm" className="text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); removeEquipe(index);}}><Trash2 className="h-4 w-4 mr-1.5" /> Remover</Button>
+                                          {watch(`equipeInstituicao.${index}.expanded`) ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
+                                      </div>
+                                  </div>
+                                  {watch(`equipeInstituicao.${index}.expanded`) && (
+                                      <div className="mt-4 space-y-4 pt-4 border-t">
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                              <div><Label><RequiredField>Identificação/Nome</RequiredField></Label><Input {...register(`equipeInstituicao.${index}.nome`)} /><p className="text-red-500 text-sm mt-1">{errors.equipeInstituicao?.[index]?.nome?.message}</p></div>
+                                              <div><Label><RequiredField>Formação</RequiredField></Label><Input {...register(`equipeInstituicao.${index}.formacao`)} /><p className="text-red-500 text-sm mt-1">{errors.equipeInstituicao?.[index]?.formacao?.message}</p></div>
+                                              <div><Label><RequiredField>Telefone</RequiredField></Label><Controller name={`equipeInstituicao.${index}.telefone`} control={control} render={({ field: { onChange, onBlur, value, ref } }) => ( <Input ref={ref} value={value || ''} onChange={(e) => onChange(applyPhoneMask(e.target.value))} onBlur={onBlur} type="tel" maxLength={15} /> )}/><p className="text-red-500 text-sm mt-1">{errors.equipeInstituicao?.[index]?.telefone?.message}</p></div>
+                                              <div><Label><RequiredField>E-mail</RequiredField></Label><Input {...register(`equipeInstituicao.${index}.email`)} /><p className="text-red-500 text-sm mt-1">{errors.equipeInstituicao?.[index]?.email?.message}</p></div>
+                                              <div><Label><RequiredField>N° de Registro</RequiredField></Label><Input {...register(`equipeInstituicao.${index}.registro`)} /><p className="text-red-500 text-sm mt-1">{errors.equipeInstituicao?.[index]?.registro?.message}</p></div>
+                                          </div>
+                                          {renderAddressFields(`equipeInstituicao.${index}`, (errors.equipeInstituicao as any)?.[index])}
+                                      </div>
+                                  )}
                              </div>
                         ))}
                         {errors.equipeInstituicao?.message && <p className="text-red-500 text-sm mt-1">{errors.equipeInstituicao.message}</p>}
@@ -247,8 +260,8 @@ const FormularioInstituicao = () => {
 
                     {/* --- BOTÕES DE AÇÃO --- */}
                     <div className="flex justify-end items-center gap-4 pt-6">
-                        <Button type="submit" className="bg-[#90EE90] hover:bg-[#7CCD7C] text-white font-bold px-8 py-3 text-lg h-auto rounded-md" disabled={isSubmitting} onClick={() => navigate('/local-protocol')}>
-                            {isSubmitting ? (<div className="flex items-center gap-2"><LoadingSpinner /> Salvando...</div>) : ('Salvar Informações')}
+                        <Button type="submit" className="bg-[#90EE90] hover:bg-[#7CCD7C] text-white font-bold px-8 py-3 text-lg h-auto rounded-md" disabled={isSubmitting}>
+                            {isSubmitting ? (<div className="flex items-center gap-2"><LoadingSpinner /> Salvando...</div>) : ('Salvar e Avançar')}
                         </Button>
                     </div>
                 </form>
