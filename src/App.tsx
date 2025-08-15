@@ -20,8 +20,17 @@ import DataPatrocinador from "./pages/protocol/DataPatrocinador"
 import DataInstituicao from "./pages/protocol/DataInstituicao"
 import LocalProtocol from "./pages/protocol/LocalProtocol";
 import ProdutoVeterinario from "./pages/protocol/ProdutoVeterinario";
-import CapaPDF from "./pages/protocol/CapaPDF";
+import VisualizacaoCapaPDF from "./pages/protocol/CapaPDF";
 import FormularioIntroducao from "./pages/protocol/FormularioIntroducao";
+import FormularioObservacao from "./pages/protocol/FormularioObjetivo";
+import FormularioJustificativa from "./pages/protocol/FormularioJustificativa";
+import FormularioRequisitos from "./pages/protocol/FormularioRequisitos";
+import FormularioMetodo from "./pages/protocol/FormularioMaterial";
+import FormularioSaude from "./pages/protocol/FormularioSaude";
+import FormularioEventoAdverso from "./pages/protocol/FormularioEvento";
+import FormularioEutanasia from "./pages/protocol/FormularioEutanasia";
+import FormularioRegistro from "./pages/protocol/FormularioRegistro";
+import VisualizacaoCompletaPDF from "./pages/protocol/ProtocolFinal";
 
 const queryClient = new QueryClient();
 
@@ -49,8 +58,17 @@ const App = () => (
           <Route path="/instituicao-cadastro"  element={<DataInstituicao />}/>
           <Route path="/local-protocol"  element={<LocalProtocol />}/>
           <Route path="/produto-veterinario"  element={<ProdutoVeterinario />}/>
-          <Route path="/capa/:codigoEstudo" element={<CapaPDF/>}/>
+          <Route path="/capa/:codigoEstudo" element={<VisualizacaoCapaPDF/>}/>
           <Route path="/introducao" element={<FormularioIntroducao/>}/>
+          <Route path="/objetivo" element={<FormularioObservacao/>}/>
+          <Route path="/justificativa" element={<FormularioJustificativa/>}/>
+          <Route path="/requisitos" element={<FormularioRequisitos/>}/>
+          <Route path="/material-metodo" element={<FormularioMetodo/>}/>
+          <Route path="/saude" element={<FormularioSaude/>}/>
+          <Route path="/evento" element={<FormularioEventoAdverso/>}/>
+          <Route path="/eutanasia" element={<FormularioEutanasia/>}/>
+          <Route path="/registro" element={<FormularioRegistro/>}/>
+          <Route path="/protocolo-final" element={<VisualizacaoCompletaPDF/>}/>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

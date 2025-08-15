@@ -220,7 +220,7 @@ const PaginaContinuacaoInfo = ({ dadosProdutos, dadosInstituicao, dadosLocal }: 
 
 
 // --- COMPONENTE PRINCIPAL DE VISUALIZAÇÃO ---
-const VisualizacaoCompletaPDF = () => {
+const VisualizacaoCapaPDF = () => {
     const navigate = useNavigate();
     const [allData, setAllData] = useState<any>(null);
     const [scriptsLoaded, setScriptsLoaded] = useState(false);
@@ -356,4 +356,4 @@ const VisualizacaoCompletaPDF = () => {
     );
 };
 
-export default VisualizacaoCompletaPDF;
+export default VisualizacaoCapaPDF;
