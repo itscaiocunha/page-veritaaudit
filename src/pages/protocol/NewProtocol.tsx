@@ -10,13 +10,9 @@ const Protocolo = () => {
   // --- Estados do Formulário ---
   const [titulo, setTitulo] = useState("");
   const [patrocinador, setPatrocinador] = useState("");
-  const [objetivo, setObjetivo] = useState("");
   const [responsavel, setResponsavel] = useState("");
   const [codigoEstudo, setCodigoEstudo] = useState("");
-  const [produto, setProduto] = useState("");
-  const [versaoData, setVersaoData] = useState("");
-  const [duracao, setDuracao] = useState("");
-  const [tipo, setTipo] = useState("");
+  const [tipoEstudo, setTipoEstudo] = useState("");
   const [tipoProduto, setTipoProduto] = useState("");
   const [especie, setEspecie] = useState("");
 
@@ -32,12 +28,8 @@ const Protocolo = () => {
   const schema = yup.object().shape({
     titulo: yup.string().required("O título é obrigatório"),
     patrocinador: yup.string().required("O patrocinador é obrigatório"),
-    objetivo: yup.string().required("O objetivo é obrigatório"),
     responsavel: yup.string().required("O responsável é obrigatório"),
-    produto: yup.string().required("O produto é obrigatório"),
-    versaoData: yup.string().required("A versão e data são obrigatórias"),
-    duracao: yup.string().required("A duração do estudo é obrigatória"),
-    tipo: yup.string().required("O tipo de estudo é obrigatório"),
+    tipoEstudo: yup.string().required("O tipo de estudo é obrigatório"),
     tipoProduto: yup.string().required("A classe terapêutica é obrigatória"),
     especie: yup.string().required("A espécie é obrigatória"),
   });
@@ -45,7 +37,7 @@ const Protocolo = () => {
   // --- Lógica para gerar o código do estudo ---
   const gerarCodigo = (pat: string) => {
     const numPat = pat.replace(/\D/g, "").padStart(2, '0').slice(0, 2);
-    const sequencial = "0001"; // Lógica sequencial pode ser aprimorada no futuro
+    const sequencial = "0001";
     const ano = new Date().getFullYear().toString().slice(-2);
     return `${numPat}-${sequencial}-${ano}`;
   };
@@ -64,22 +56,20 @@ const Protocolo = () => {
     try {
       setErrors({});
       const dadosFormulario = {
-        titulo, patrocinador, objetivo, responsavel, produto,
-        versaoData, duracao, tipo, tipoProduto, especie,
-        codigoEstudo: gerarCodigo(patrocinador) // Garante que o código seja salvo
+        titulo, patrocinador, responsavel,
+        tipoEstudo, tipoProduto, especie,
+        codigoEstudo: gerarCodigo(patrocinador)
       };
 
       await schema.validate(dadosFormulario, { abortEarly: false });
       
       console.log("Validação da Etapa 1 bem-sucedida!");
 
-      // Busca o objeto principal do localStorage ou cria um novo se não existir
       const fullProtocolData = JSON.parse(localStorage.getItem('fullProtocolData') || '{}');
 
       // Atualiza a seção 'protocolo' com os dados deste formulário
       fullProtocolData.protocolo = dadosFormulario;
 
-      // Salva o objeto completo de volta no localStorage
       localStorage.setItem('fullProtocolData', JSON.stringify(fullProtocolData));
 
       // Navega para a próxima etapa
@@ -107,15 +97,10 @@ const Protocolo = () => {
     if (dadosSalvos) {
       setTitulo(dadosSalvos.titulo || "");
       setPatrocinador(dadosSalvos.patrocinador || "");
-      setTipo(dadosSalvos.tipo || "");
+      setTipoEstudo(dadosSalvos.TipoEstudo || "");
       setResponsavel(dadosSalvos.responsavel || "");
-      setObjetivo(dadosSalvos.objetivo || "");
-      setProduto(dadosSalvos.produto || "");
-      setVersaoData(dadosSalvos.versaoData || "");
-      setDuracao(dadosSalvos.duracao || "");
       setTipoProduto(dadosSalvos.tipoProduto || "");
       setEspecie(dadosSalvos.especie || "");
-      // O código do estudo será recalculado pelo outro useEffect
     }
   }, []);
 
@@ -150,16 +135,12 @@ const Protocolo = () => {
     const dadosFormulario = {
       titulo,
       patrocinador,
-      objetivo,
       responsavel,
-      produto,
-      versaoData,
-      duracao,
-      tipo,
+      tipoEstudo,
       tipoProduto,
       especie,
       codigoEstudo: gerarCodigo(patrocinador), // Sempre recalculado
-    };
+    };;
 
     const fullProtocolData = JSON.parse(localStorage.getItem('fullProtocolData') || '{}');
     fullProtocolData.protocolo = dadosFormulario;
@@ -167,15 +148,20 @@ const Protocolo = () => {
   }, [
     titulo,
     patrocinador,
-    objetivo,
     responsavel,
-    produto,
-    versaoData,
-    duracao,
-    tipo,
+    tipoEstudo,
     tipoProduto,
     especie,
   ]);
+
+  const getCurrentVersionAndDate = () => {
+        const today = new Date();
+        const day = String(today.getDate()).padStart(2, '0');
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const year = today.getFullYear();
+        return `01-${day}/${month}/${year}`;
+    };
+  const versaoDataAutomatica = getCurrentVersionAndDate()
 
   // --- RENDERIZAÇÃO ---
   return (
@@ -194,13 +180,13 @@ const Protocolo = () => {
               {errors.patrocinador && <p className="text-red-500 text-xs mt-1">{errors.patrocinador}</p>}
             </div>
             <div>
-              <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full border border-gray-300 rounded-md py-3 px-4 h-12 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <select value={tipoEstudo} onChange={(e) => setTipoEstudo(e.target.value)} className="w-full border border-gray-300 rounded-md py-3 px-4 h-12 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 <option value="" disabled>Selecione o tipo de estudo</option>
-                <option value="EC Eficácia">EC Eficácia</option>
-                <option value="EC Segurança">EC Segurança</option>
-                <option value="EC Resíduo">EC Resíduo</option>
+                <option value="EC Eficácia">Eficácia</option>
+                <option value="EC Segurança">Segurança</option>
+                <option value="EC Resíduo">Resíduo</option>
               </select>
-              {errors.tipo && <p className="text-red-500 text-xs mt-1">{errors.tipo}</p>}
+              {errors.tipoEstudo && <p className="text-red-500 text-xs mt-1">{errors.tipoEstudo}</p>}
             </div>
             <div>
               <select value={tipoProduto} onChange={(e) => setTipoProduto(e.target.value)} className="w-full border border-gray-300 rounded-md py-3 px-4 h-12 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -282,32 +268,9 @@ const Protocolo = () => {
               {errors.especie && <p className="text-red-500 text-xs mt-1">{errors.especie}</p>}
             </div>
             <div>
-              <Input type="text" placeholder="Objetivo" className="py-3 h-12 text-base" value={objetivo} onChange={(e) => setObjetivo(e.target.value)} />
-              {errors.objetivo && <p className="text-red-500 text-xs mt-1">{errors.objetivo}</p>}
-            </div>
-            <div>
               <Input type="text" placeholder="Responsável pelo Estudo" className="py-3 h-12 text-base" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
               {errors.responsavel && <p className="text-red-500 text-xs mt-1">{errors.responsavel}</p>}
             </div>
-            <div>
-              <Input type="text" placeholder="Produto Veterinário Investigacional" className="py-3 h-12 text-base" value={produto} onChange={(e) => setProduto(e.target.value)} />
-              {errors.produto && <p className="text-red-500 text-xs mt-1">{errors.produto}</p>}
-            </div>
-            <div>
-              <Input type="text" placeholder="Versão e Data" className="py-3 h-12 text-base" value={versaoData} onChange={(e) => setVersaoData(e.target.value)} />
-              {errors.versaoData && <p className="text-red-500 text-xs mt-1">{errors.versaoData}</p>}
-            </div>
-            <div>
-              <Input type="text" placeholder="Duração do Estudo Clínico" className="py-3 h-12 text-base" value={duracao} onChange={(e) => setDuracao(e.target.value)} />
-              {errors.duracao && <p className="text-red-500 text-xs mt-1">{errors.duracao}</p>}
-            </div>
-            <Button
-              type="button"
-              onClick={handleExportPdf}
-              className="w-full bg-green-400 hover:bg-green-500 text-black py-3 h-12 text-base"
-            >
-            Exportar Capa em PDF
-            </Button>
             <Button type="submit" className="w-full bg-green-400 hover:bg-green-500 text-black py-3 h-12 text-base font-semibold">
               Criar Protocolo
             </Button>
@@ -325,36 +288,26 @@ const Protocolo = () => {
           </div>
           {/* Título Principal */}
           <div className="text-center my-4">
-            <p className="text-sm">Protocolo</p>
-            <p className="text-xs">código do estudo ({codigoEstudo})</p>
+            <p className="text-sm">Protocolo Nº{codigoEstudo}</p>
             <h1 className="text-lg font-bold my-3 uppercase">Protocolo de Estudo</h1>
-            <p className="text-sm font-semibold uppercase">
-              {tipo || "TIPO DE ESTUDO"}
-            </p>
-            <p className="text-sm">de uma formulação veterinária</p>
             <div className="border-black mt-2 mx-4 h-4 text-center">
               <span className="text-black/80 font-semibold">{titulo || ''}</span>
             </div>
           </div>
           {/* Corpo do Formulário */}
-          <div className="flex-grow text-sm">
-            <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">OBJETIVO</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{objetivo || ''}</span></div></div>
+          <div className="flex-grow text-sm">    
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">PATROCINADOR</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{patrocinador || ''}</span></div></div>
-            <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">RESPONSÁVEL PELO ESTUDO</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{responsavel || ''}</span></div></div>
+            <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">ESTUDO CLÍNICO</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{tipoEstudo || ''}</span></div></div>        
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">CÓDIGO DO ESTUDO</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{codigoEstudo || ''}</span></div></div>
-            <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0 leading-tight">PRODUTO VETERINÁRIO<br />INVESTIGACIONAL</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{produto || ''}</span></div></div>
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">CLASSE TERAPÊUTICA</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{tipoProduto || ''}</span></div></div>
             <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">ESPÉCIE(S) ALVO</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{especie || ''}</span></div></div>
-            <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">VERSÃO E DATA</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{versaoData || ''}</span></div></div>
-            <div className="flex items-start mt-2"><p className="font-bold w-60 shrink-0">CONFORMIDADE ÉTICA:</p><p className="text-xs ml-2">Este protocolo será submetido a uma comissão de ética no uso de animais e só será iniciado após aprovação.</p></div>
-            <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">DURAÇÃO DO ESTUDO CLÍNICO:</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{duracao || ''}</span></div></div>
+            <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">VERSÃO E DATA</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{versaoDataAutomatica}</span></div></div>
           </div>
           {/* Rodapé */}
           <div className="mt-auto">
-            <p className="text-[9px] text-justify my-3 leading-tight">Este documento contém informações confidenciais e sigilosas pertencentes ao Patrocinador. Visto que, para o bom e fiel desempenho das atividades do Responsável pelo estudo, faz-se necessário a disponibilidade de acesso às informações técnicas e outras relacionadas ao produto veterinário investigacional, assume-se assim o compromisso de manter tais informações confidenciais e em não as divulgar a terceiros (exceto se exigido por legislação aplicável), nem as utilizará para fins não autorizados. Em caso de suspeita ou quebra real desta obrigação, o Patrocinador deverá ser imediatamente notificada.</p>
-            <div className="text-center">
-              <p className="text-[8px] text-justify leading-tight">Este documento contém informações confidenciais e não pode ser objeto de publicação, cópia ou de compartilhamento ou uso impróprio desse conteúdo fora do ambiente das empresas Responsável pelo estudo (CRO) e o Patrocinador sem prévio consentimento por escrito e expressamente proibido (exceto se exigido por legislação aplicável).</p>
-            </div>
+            <footer className="text-xs mt-auto pt-8 space-y-2 text-justify">
+              <p>Este documento contém informações confidenciais e sigilosas. Qualquer reprodução, compartilhamento ou uso impróprio deste conteúdo fora do ambiente das empresas envolvidas, sem prévio consentimento por escrito, é expressamente proibido.</p>
+            </footer>
           </div>
         </div>
       </div>

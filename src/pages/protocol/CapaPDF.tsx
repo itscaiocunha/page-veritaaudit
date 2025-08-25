@@ -1,18 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-// import jsPDF from 'jspdf'; // Removido
-// import html2canvas from 'html2canvas'; // Removido
 import { ArrowLeft, Download, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-// --- HELPERS ---
-const PageWrapper = ({ children, innerRef }: { children: React.ReactNode, innerRef?: React.Ref<HTMLDivElement> }) => (
+const PageWrapper = ({ children, innerRef, protocoloCodigo }: { children: React.ReactNode, innerRef?: React.Ref<HTMLDivElement>, protocoloCodigo?: string }) => (
     <div 
         ref={innerRef} 
         className="page-wrapper-pdf bg-white shadow-lg p-12 font-serif" 
         style={{ 
             width: '210mm', 
-            height: '297mm', // Altura fixa para rácio de aspeto correto
+            height: '297mm',
             position: 'relative', 
             display: 'flex', 
             flexDirection: 'column' 
@@ -22,7 +19,7 @@ const PageWrapper = ({ children, innerRef }: { children: React.ReactNode, innerR
             <div className="w-48 h-24 flex items-center justify-center text-center p-1 font-bold text-gray-700 border border-black">LOGO DA CRO/UNIVERSIDADE</div>
             <div className="text-center mt-4">
                 <p className="font-semibold">Protocolo</p>
-                <p className="text-xs">código do estudo (ex. 001/24)</p>
+                <p className="text-xs">{protocoloCodigo || 'código do estudo (ex. 001/24)'}</p>
             </div>
             <div className="w-48 h-24 flex items-center justify-center text-center p-1 font-bold text-gray-700 border border-black">LOGO DO PATROCINADOR</div>
         </header>
@@ -30,48 +27,51 @@ const PageWrapper = ({ children, innerRef }: { children: React.ReactNode, innerR
             {children}
         </main>
         <footer className="text-xs mt-auto pt-8 space-y-2 text-justify">
-            <p>Este documento contém informações confidenciais e sigilosas pertencentes ao Patrocinador. Visto que, para o bom e fiel desempenho das atividades do Responsável pelo estudo, faz-se necessário a disponibilidade de acesso às informações técnicas e outras relacionadas ao produto veterinário investigacional, assume-se assim o compromisso de manter tais informações confidenciais e em não as divulgar a terceiros (exceto se exigido por legislação aplicável), nem as utilizará para fins não autorizados. Em caso de suspeita ou quebra real desta obrigação, o Patrocinador deverá ser imediatamente notificada.</p>
-            <p>Este documento contém informações confidenciais e sigilosas. Qualquer reprodução total ou parcial, compartilhamento ou uso impróprio deste conteúdo fora do ambiente das empresas Responsável pelo estudo clínico e o Patrocinador sem prévio consentimento por escrito é expressamente proibido (exceto se exigido por legislação aplicável).</p>
+            <p>Este documento contém informações confidenciais e sigilosas. Qualquer reprodução, compartilhamento ou uso impróprio deste conteúdo fora do ambiente das empresas envolvidas, sem prévio consentimento por escrito, é expressamente proibido.</p>
         </footer>
     </div>
 );
 
 
-// --- COMPONENTES DE PÁGINA ---
+const Capa = ({ data }: { data: any }) => {
+    const getCurrentVersionAndDate = () => {
+        const today = new Date();
+        const day = String(today.getDate()).padStart(2, '0');
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const year = today.getFullYear();
+        return `01-${day}/${month}/${year}`;
+    };
+    const versaoDataAutomatica = getCurrentVersionAndDate();
 
-const Capa = ({ data }: { data: any }) => (
-    <PageWrapper>
-        <div className="text-center flex-grow flex flex-col justify-center items-center">
-            <h1 className="text-2xl font-bold my-4 uppercase">Protocolo de Estudo</h1>
-            <p className="text-xl font-semibold uppercase">
-                {data?.protocolo?.tipo || "EFICÁCIA/SEGURANÇA CLÍNICA/RESÍDUO/BIODISPONIBILIDADE"}
-            </p>
-            <p className="text-lg mt-2">de uma formulação veterinária</p>
-            <div className="border-b-2 border-black mt-6 w-full text-center py-1">
-                <span className="text-black font-semibold text-lg">{data?.protocolo?.titulo || 'Título do Estudo'}</span>
+    return (
+        <PageWrapper protocoloCodigo={data?.protocolo?.codigoEstudo}>
+            <div className="text-center flex-grow flex flex-col justify-center items-center">
+                <h1 className="text-2xl font-bold my-4 uppercase">Protocolo de Estudo</h1>
+                <div className="border-b-2 border-black mt-6 w-full text-center py-1">
+                    <span className="text-black font-semibold text-lg">{data?.protocolo?.titulo || 'Título do Estudo'}</span>
+                </div>
             </div>
-        </div>
-        <div className="text-base space-y-3">
-            <div className="flex"><p className="font-bold w-64 shrink-0">OBJETIVO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.objetivo || ''}</span></div></div>
-            <div className="flex"><p className="font-bold w-64 shrink-0">PATROCINADOR</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.patrocinador?.patrocinador?.nome || ''}</span></div></div>
-            <div className="flex"><p className="font-bold w-64 shrink-0">RESPONSÁVEL PELO ESTUDO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.instituicao?.investigador?.nome || ''}</span></div></div>
-            <div className="flex"><p className="font-bold w-64 shrink-0">CÓDIGO DO ESTUDO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.codigoEstudo || ''}</span></div></div>
-            <div className="flex items-center"><p className="font-bold w-64 shrink-0 leading-tight">PRODUTO VETERINÁRIO<br />INVESTIGACIONAL</p><div className="border-b border-black flex-grow self-end mb-1"><span className="pl-2">{data?.produtos?.produtoInvestigacional?.[0]?.identificacao || ''}</span></div></div>
-            <div className="flex"><p className="font-bold w-64 shrink-0">VERSÃO E DATA</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.versaoData || ''}</span></div></div>
-            <div className="flex items-start mt-2"><p className="font-bold w-64 shrink-0">CONFORMIDADE ÉTICA:</p><p className="text-sm ml-2">Este protocolo será submetido a uma comissão de ética no uso de animais e só será iniciado após aprovação.</p></div>
-            <div className="flex"><p className="font-bold w-64 shrink-0">DURAÇÃO DO ESTUDO CLÍNICO:</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.duracao || ''}</span></div></div>
-        </div>
-    </PageWrapper>
-);
+            <div className="text-base space-y-3">
+                <div className="flex"><p className="font-bold w-64 shrink-0">ESTUDO CLÍNICO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.tipoEstudo || ''}</span></div></div>
+                <div className="flex"><p className="font-bold w-64 shrink-0">PATROCINADOR</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.patrocinador?.patrocinador?.nome || ''}</span></div></div>
+                <div className="flex"><p className="font-bold w-64 shrink-0">RESPONSÁVEL PELO ESTUDO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.instituicao?.investigador?.nome || ''}</span></div></div>
+                <div className="flex"><p className="font-bold w-64 shrink-0">ESPÉCIE ALVO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.especie || 'Não informado'}</span></div></div>
+                <div className="flex"><p className="font-bold w-64 shrink-0">CLASSE TERAPÊUTICA</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.tipoProduto || 'Não informado'}</span></div></div>
+                <div className="flex"><p className="font-bold w-64 shrink-0">CÓDIGO DO ESTUDO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.codigoEstudo || ''}</span></div></div>
+                <div className="flex"><p className="font-bold w-64 shrink-0">VERSÃO E DATA</p><div className="border-b border-black flex-grow"><span className="pl-2">{versaoDataAutomatica}</span></div></div>
+            </div>
+        </PageWrapper>
+    )
+};
 
-const PaginaAssinaturas = ({ dadosPatrocinador, dadosInstituicao }: { dadosPatrocinador: any, dadosInstituicao: any }) => {
+const PaginaAssinaturas = ({ dadosPatrocinador, dadosInstituicao, codigoEstudo }: { dadosPatrocinador: any, dadosInstituicao: any, codigoEstudo?: string }) => {
     const nomeRepresentante = dadosPatrocinador?.representante?.nome || " ";
     const nomePatrocinador = dadosPatrocinador?.patrocinador?.nome || " ";
     const nomeInvestigador = dadosInstituicao?.investigador?.nome || " ";
     const nomeInstituicao = dadosInstituicao?.instituicao?.nome || " ";
 
     return (
-        <PageWrapper>
+        <PageWrapper protocoloCodigo={codigoEstudo}>
             <h2 className="text-xl font-bold text-center mb-8">PÁGINA DE ASSINATURAS</h2>
             <p className="text-sm mb-16">Li e concordo que a pesquisa clínica será conduzida conforme estipulado neste protocolo.</p>
             <div className="space-y-20">
@@ -103,42 +103,13 @@ const PaginaAssinaturas = ({ dadosPatrocinador, dadosInstituicao }: { dadosPatro
     );
 };
 
-const PaginaInfoGerais = ({ dadosPatrocinador, dadosProdutos }: { dadosPatrocinador: any, dadosProdutos: any }) => {
+const PaginaInfoGerais = ({ dadosPatrocinador, codigoEstudo }: { dadosPatrocinador: any, codigoEstudo?: string }) => {
     const renderAddress = (addr: any) => addr ? `${addr.logradouro}, ${addr.numero}, ${addr.complemento || ''} - ${addr.bairro}, ${addr.cidade}/${addr.uf} - CEP: ${addr.cep}` : 'Não informado';
-    const renderProduct = (prod: any) => (
-        prod ? 
-        <div className="text-sm space-y-1">
-            <p><strong>Nome/Código do produto:</strong> {prod.identificacao}</p>
-            <p><strong>Princípio ativo:</strong> {prod.principioAtivo}</p>
-            <p><strong>Dose:</strong> {prod.dosagem}</p>
-            <p><strong>Via de administração:</strong> {prod.viaAdministracao}</p>
-            <p><strong>Fabricante:</strong> {prod.fabricante}</p>
-            <p><strong>Composição:</strong> {prod.concentracao}</p>
-            <table className="w-full mt-2 text-xs border-collapse border border-black">
-                <thead>
-                    <tr>
-                        <th className="border border-black p-1">Partida/Lote</th>
-                        <th className="border border-black p-1">Apresentação</th>
-                        <th className="border border-black p-1">Data de Fabricação</th>
-                        <th className="border border-black p-1">Data de validade</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td className="border border-black p-1 text-center">{prod.lote}</td>
-                        <td className="border border-black p-1 text-center">{prod.apresentacoes}</td>
-                        <td className="border border-black p-1 text-center">{prod.dataFabricacao}</td>
-                        <td className="border border-black p-1 text-center">{prod.dataValidade}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div> : <p className="text-sm text-gray-500">Não informado.</p>
-    );
 
     return (
-        <PageWrapper>
+        <PageWrapper protocoloCodigo={codigoEstudo}>
             <h2 className="text-xl font-bold mb-6">1 INFORMAÇÕES GERAIS</h2>
-            <div className="space-y-3 text-sm">
+            <div className="space-y-4 text-sm">
                 <div>
                     <h3 className="font-bold">1.1 Patrocinador</h3>
                     <p className="pl-4"><strong>Nome:</strong> {dadosPatrocinador?.patrocinador?.nome || 'Não informado'}</p>
@@ -147,77 +118,128 @@ const PaginaInfoGerais = ({ dadosPatrocinador, dadosProdutos }: { dadosPatrocina
                 </div>
                 <div>
                     <h4 className="font-bold">1.1.1 Representante do Patrocinador</h4>
-                    <p className="pl-4"><strong>Nome:</strong> {dadosPatrocinador?.representante?.nome || 'Não informado'}</p>
-                    <p className="pl-4"><strong>Endereço:</strong> {renderAddress(dadosPatrocinador?.representante?.endereco)}</p>
-                    <p className="pl-4"><strong>Telefone:</strong> {dadosPatrocinador?.representante?.telefone || 'N/A'}</p>
+                    <div className="pl-4">
+                        <p><strong>Nome:</strong> {dadosPatrocinador?.representante?.nome || 'Não informado'}</p>
+                        <p><strong>Formação:</strong> {dadosPatrocinador?.representante?.formacao}</p>
+                        <p><strong>Registro:</strong> {dadosPatrocinador?.representante?.registro}</p>
+                        <p><strong>E-mail:</strong> {dadosPatrocinador?.representante?.email}</p>
+                        <p><strong>Telefone:</strong> {dadosPatrocinador?.representante?.telefone}</p>
+                        <p><strong>Endereço:</strong> {renderAddress(dadosPatrocinador?.representante?.endereco)}</p>
+                    </div>
                 </div>
                 <div>
                     <h4 className="font-bold">1.1.2 Monitor(es) do Estudo</h4>
                     {dadosPatrocinador?.monitores?.map((monitor: any, index: number) => (
                         <div key={index} className="pl-4 mb-2">
                             <p><strong>Nome:</strong> {monitor.nome}</p>
-                            <p><strong>Endereço:</strong> {renderAddress(monitor.endereco)}</p>
-                            <p><strong>Telefone:</strong> {monitor.telefone}</p>
+                            <p className="pl-2"><strong>Formação:</strong> {monitor.formacao}</p>
+                            <p className="pl-2"><strong>Endereço:</strong> {renderAddress(monitor.endereco)}</p>
+                            <p className="pl-2"><strong>Telefone:</strong> {monitor.telefone}</p>
                         </div>
                     )) || <p className="pl-4 text-gray-500">Nenhum monitor cadastrado.</p>}
                 </div>
                 <div>
-                    <h3 className="font-bold mt-4">1.2 Dados dos produtos</h3>
-                    <h4 className="font-bold">1.2.1 Produto veterinário investigacional (PVI)</h4>
-                    <div className="pl-4">{renderProduct(dadosProdutos?.produtoInvestigacional?.[0])}</div>
+                    <h4 className="font-bold">1.1.3 Equipe do Patrocinador</h4>
+                    {dadosPatrocinador?.equipe?.map((membro: any, index: number) => (
+                        <div key={index} className="pl-4 mb-2">
+                            <p><strong>Nome:</strong> {membro.nome}</p>
+                            <p className="pl-2"><strong>Formação:</strong> {membro.formacao}</p>
+                            <p className="pl-2"><strong>Cargo:</strong> {membro.cargo}</p>
+                            <p className="pl-2"><strong>Endereço:</strong> {renderAddress(membro.endereco)}</p>
+                            <p className="pl-2"><strong>Telefone:</strong> {membro.telefone}</p>
+                        </div>
+                    )) || <p className="pl-4 text-gray-500">Nenhuma equipe cadastrada.</p>}
                 </div>
             </div>
         </PageWrapper>
     );
 };
 
-const PaginaContinuacaoInfo = ({ dadosProdutos, dadosInstituicao, dadosLocal }: { dadosProdutos: any, dadosInstituicao: any, dadosLocal: any }) => {
-    const renderProduct = (prod: any) => (
-         prod ? 
-        <div className="text-sm space-y-1">
-            <p><strong>Nome/Código do produto:</strong> {prod.identificacao}</p>
-            <p><strong>Princípio ativo:</strong> {prod.principioAtivo}</p>
-        </div> : <p className="text-sm text-gray-500">Não informado.</p>
-    );
-    const renderLocal = (local: any) => (
-        local ? <p className="pl-4">{local.identificacao}</p> : <p className="pl-4 text-gray-500">Não informado.</p>
-    );
+const PaginaInstituicaoELocal = ({ dadosInstituicao, dadosLocal, codigoEstudo }: { dadosInstituicao: any, dadosLocal: any, codigoEstudo?: string }) => {
+    const renderAddress = (addr: any) => addr ? `${addr.logradouro}, ${addr.numero}, ${addr.complemento || ''} - ${addr.bairro}, ${addr.cidade}/${addr.uf} - CEP: ${addr.cep}` : 'Não informado';
+    
     const renderPessoa = (p: any) => (
-        p ? <p className="pl-4">{p.nome} ({p.formacao})</p> : <p className="pl-4 text-gray-500">Não informado.</p>
+        p ? <div className="pl-4">
+            <p><strong>Nome:</strong> {p.nome}</p>
+            <p className="pl-2"><strong>Formação:</strong> {p.formacao}</p>
+            <p className="pl-2"><strong>Registro:</strong> {p.registro}</p>
+            <p className="pl-2"><strong>E-mail:</strong> {p.email}</p>
+            <p className="pl-2"><strong>Telefone:</strong> {p.telefone}</p>
+            <p className="pl-2"><strong>Endereço:</strong> {renderAddress(p.endereco)}</p>
+        </div> : <p className="pl-4 text-gray-500">Não informado.</p>
     );
+
+    const renderLocalDetalhado = (local: any) => (
+        local ? <div className="pl-4">
+            <p><strong>Identificação:</strong> {local.identificacao}</p>
+            <p className="pl-2"><strong>Responsável:</strong> {local.responsavel}</p>
+            <p className="pl-2"><strong>Telefone:</strong> {local.telefone}</p>
+            <p className="pl-2"><strong>E-mail:</strong> {local.email}</p>
+            {local.geolocalizacao && <p className="pl-2"><strong>Geolocalização:</strong> {local.geolocalizacao}</p>}
+            {local.registroCiaep && <p className="pl-2"><strong>N° Registro CIAEP:</strong> {local.registroCiaep}</p>}
+            {local.credenciamento && <p className="pl-2"><strong>Credenciamento:</strong> {local.credenciamento}</p>}
+            <p className="pl-2"><strong>Endereço:</strong> {renderAddress(local.endereco)}</p>
+        </div> : <p className="pl-4 text-gray-500">Não informado.</p>
+    );
+
+    const localData = dadosLocal;
 
     return (
-        <PageWrapper>
-            <div className="space-y-3 text-sm">
-                <h4 className="font-bold">1.2.2 Controle Negativo</h4>
-                <div className="pl-4">{renderProduct(dadosProdutos?.controleNegativo?.[0])}</div>
+        <PageWrapper protocoloCodigo={codigoEstudo}>
+            <div className="space-y-4 text-sm">
+                <div>
+                    <h3 className="font-bold">1.2 Instituição Responsável</h3>
+                    <div className="pl-4">
+                        <p><strong>Nome:</strong> {dadosInstituicao?.instituicao?.nome}</p>
+                        <p className="pl-2"><strong>Telefone:</strong> {dadosInstituicao?.instituicao?.telefone}</p>
+                        <p className="pl-2"><strong>N° Registro CIAEP:</strong> {dadosInstituicao?.instituicao?.registroCiaep}</p>
+                        <p className="pl-2"><strong>Endereço:</strong> {renderAddress(dadosInstituicao?.instituicao?.endereco)}</p>
+                    </div>
+                </div>
 
-                <h4 className="font-bold mt-3">1.2.3 Controle Positivo</h4>
-                <div className="pl-4">{renderProduct(dadosProdutos?.controlePositivo?.[0])}</div>
+                <div>
+                    <h4 className="font-bold">1.2.1 Investigador</h4>
+                    {renderPessoa(dadosInstituicao?.investigador)}
+                </div>
                 
-                <h3 className="font-bold mt-4">1.3 Local de realização</h3>
-                <h4 className="font-bold">1.3.1 Etapa Clínica</h4>
-                {renderLocal(dadosLocal?.etapasClinicas?.[0])}
-                <h4 className="font-bold mt-3">1.3.2 Etapa Laboratorial</h4>
-                {renderLocal(dadosLocal?.etapasLaboratoriais?.[0])}
-
-                <h3 className="font-bold mt-4">1.4 Equipe responsável pela condução do estudo</h3>
-                <h4 className="font-bold">1.4.1 Investigador</h4>
-                {renderPessoa(dadosInstituicao?.investigador)}
-                <h4 className="font-bold mt-3">1.4.2 Equipe Técnica</h4>
-                <div className="space-y-1">
+                <div>
+                    <h4 className="font-bold">1.2.2 Equipe Técnica</h4>
                     {dadosInstituicao?.equipeInstituicao?.map((membro: any, i: number) => (
-                        <div key={i}>{renderPessoa(membro)}</div>
+                        <div key={i} className="mb-2">{renderPessoa(membro)}</div>
                     )) || <p className="pl-4 text-gray-500">Nenhuma equipe cadastrada.</p>}
                 </div>
 
-                <h3 className="font-bold mt-4">1.5 Comissão de Ética</h3>
-                <p className="text-sm pl-4">A ser definido após submissão.</p>
+                <div>
+                    <h3 className="font-bold">1.3 Local de realização</h3>
+                    {localData?.etapasClinicas?.length > 0 && (
+                        <>
+                            <h4 className="font-bold">1.3.1 Etapa Clínica</h4>
+                            {localData.etapasClinicas.map((local: any, i: number) => (
+                                <div key={i} className="mb-2">{renderLocalDetalhado(local)}</div>
+                            ))}
+                        </>
+                    )}
+                    {localData?.etapasLaboratoriais?.length > 0 && (
+                        <>
+                            <h4 className="font-bold mt-3">1.3.2 Etapa Laboratorial</h4>
+                            {localData.etapasLaboratoriais.map((local: any, i: number) => (
+                                <div key={i} className="mb-2">{renderLocalDetalhado(local)}</div>
+                            ))}
+                        </>
+                    )}
+                    {localData?.etapasEstatisticas?.length > 0 && (
+                         <>
+                            <h4 className="font-bold mt-3">1.3.3 Etapa Estatística</h4>
+                            {localData.etapasEstatisticas.map((local: any, i: number) => (
+                               <div key={i} className="mb-2">{renderLocalDetalhado(local)}</div>
+                            ))}
+                        </>
+                    )}
+                </div>
             </div>
         </PageWrapper>
     );
 };
-
 
 // --- COMPONENTE PRINCIPAL DE VISUALIZAÇÃO ---
 const VisualizacaoCapaPDF = () => {
@@ -229,6 +251,9 @@ const VisualizacaoCapaPDF = () => {
     const handleGoBack = () => window.history.back();
 
     useEffect(() => {
+        window.jspdf = window.jspdf;
+        window.html2canvas = window.html2canvas;
+
         const jspdfScript = document.createElement('script');
         jspdfScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
         jspdfScript.async = true;
@@ -270,7 +295,8 @@ const VisualizacaoCapaPDF = () => {
         const instituicao = getLatestEntry('dadosInstituicao');
         const produtosData = getLatestEntry('dadosProdutoVeterinario');
         const local = getLatestEntry('dadosLocalProtocol');
-        const protocolo = getLatestEntry('fullProtocolData')?.protocolo;
+        const fullProtocolData = getLatestEntry('fullProtocolData');
+        const protocolo = fullProtocolData?.protocolo;
         
         const produtos = {
             produtoInvestigacional: produtosData?.produtos || [],
@@ -309,10 +335,10 @@ const VisualizacaoCapaPDF = () => {
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
         }
         
-        pdf.save('protocolo_completo.pdf');
+        pdf.save('capa_protocolo.pdf');
     };
 
-    if (!allData?.patrocinador || !allData?.instituicao || !allData?.produtos) {
+    if (!allData?.protocolo) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
                 <p>Carregando dados... Certifique-se de que todas as etapas do formulário foram preenchidas.</p>
@@ -348,12 +374,31 @@ const VisualizacaoCapaPDF = () => {
             </div>
             <div ref={pdfRef} className="py-8 flex flex-col items-center gap-8">
                 <Capa data={allData} />
-                <PaginaAssinaturas dadosPatrocinador={allData.patrocinador} dadosInstituicao={allData.instituicao} />
-                <PaginaInfoGerais dadosPatrocinador={allData.patrocinador} dadosProdutos={allData.produtos} />
-                <PaginaContinuacaoInfo dadosProdutos={allData.produtos} dadosInstituicao={allData.instituicao} dadosLocal={allData.local} />
+                <PaginaAssinaturas 
+                    dadosPatrocinador={allData.patrocinador} 
+                    dadosInstituicao={allData.instituicao} 
+                    codigoEstudo={allData.protocolo?.codigoEstudo}
+                />
+                <PaginaInfoGerais 
+                    dadosPatrocinador={allData.patrocinador} 
+                    codigoEstudo={allData.protocolo?.codigoEstudo}
+                />
+                <PaginaInstituicaoELocal 
+                    dadosInstituicao={allData.instituicao} 
+                    dadosLocal={allData.local}
+                    codigoEstudo={allData.protocolo?.codigoEstudo}
+                />
             </div>
         </div>
     );
 };
+
+// Adiciona a declaração global para as bibliotecas
+declare global {
+  interface Window {
+    jspdf: any;
+    html2canvas: any;
+  }
+}
 
 export default VisualizacaoCapaPDF;
