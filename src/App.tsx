@@ -26,11 +26,15 @@ import FormularioObservacao from "./pages/protocol/FormularioObjetivo";
 import FormularioJustificativa from "./pages/protocol/FormularioJustificativa";
 import FormularioRequisitos from "./pages/protocol/FormularioRequisitos";
 import FormularioMetodo from "./pages/protocol/FormularioMaterial";
+import FormularioEstatistica from "./pages/protocol/FormularioEstatistica";
 import FormularioSaude from "./pages/protocol/FormularioSaude";
 import FormularioEventoAdverso from "./pages/protocol/FormularioEvento";
-import FormularioEutanasia from "./pages/protocol/FormularioEutanasia";
-import FormularioRegistro from "./pages/protocol/FormularioRegistro";
+import FormularioConcomitante from "./pages/protocol/FormularioConcomitante";
+import FormularioCronograma from "./pages/protocol/FormularioCronograma";
 import VisualizacaoCompletaPDF from "./pages/protocol/ProtocolFinal";
+import FormularioEutanasia from "./pages/protocol/FormularioEutanasia";
+import FormularioAnexos from "./pages/protocol/FormularioAnexos";
+import FormularioBibliografia from "./pages/protocol/FormularioBibliografia";
 
 const queryClient = new QueryClient();
 
@@ -64,10 +68,14 @@ const App = () => (
           <Route path="/justificativa" element={<FormularioJustificativa/>}/>
           <Route path="/requisitos" element={<FormularioRequisitos/>}/>
           <Route path="/material-metodo" element={<FormularioMetodo/>}/>
+          <Route path="/estatistica" element={<FormularioEstatistica/>}/>
           <Route path="/saude" element={<FormularioSaude/>}/>
           <Route path="/evento" element={<FormularioEventoAdverso/>}/>
+          <Route path="/medicacao-concomitante" element={<FormularioConcomitante/>}/>
           <Route path="/eutanasia" element={<FormularioEutanasia/>}/>
-          <Route path="/registro" element={<FormularioRegistro/>}/>
+          <Route path="/cronograma" element={<FormularioCronograma/>}/>
+          <Route path="/anexos" element={<FormularioAnexos/>}/>
+          <Route path="/bibliografia" element={<FormularioBibliografia/>}/>
           <Route path="/protocolo-final" element={<VisualizacaoCompletaPDF/>}/>
         </Routes>
       </BrowserRouter>

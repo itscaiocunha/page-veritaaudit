@@ -9,22 +9,22 @@ import { useState, useEffect } from "react";
 
 // --- Schema ---
 const validationSchema = yup.object({
-  conteudoRegistro: yup.string().required("Este campo é obrigatório."),
+  conteudoConcomitante: yup.string().required("Este campo é obrigatório."),
 });
 
 type FormValues = yup.InferType<typeof validationSchema>;
 
-const FormularioRegistro = () => {
+const FormularioConcomitante = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<FormValues>({
     resolver: yupResolver(validationSchema),
-    defaultValues: { conteudoRegistro: "" },
+    defaultValues: { conteudoConcomitante: "" },
   });
 
   useEffect(() => {
-    const savedData = JSON.parse(localStorage.getItem("dadosRegistro") || "[]");
+    const savedData = JSON.parse(localStorage.getItem("dadosConcomitante") || "[]");
     if (savedData.length > 0) {
       reset(savedData[savedData.length - 1]);
     }
@@ -33,38 +33,38 @@ const FormularioRegistro = () => {
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
-      const existingData = JSON.parse(localStorage.getItem("dadosRegistro") || "[]");
+      const existingData = JSON.parse(localStorage.getItem("dadosConcomitante") || "[]");
       existingData.push(data);
-      localStorage.setItem("dadosRegistro", JSON.stringify(existingData));
+      localStorage.setItem("dadosConcomitante", JSON.stringify(existingData));
     } catch (error) {
       console.error("Erro ao salvar os dados:", error);
     }
 
     await new Promise((resolve) => setTimeout(resolve, 500));
     setIsSubmitting(false);
-    navigate("/protocolo-final");
+    navigate("/eutanasia");
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center py-8 px-4 bg-gray-50 font-inter">
       <h1 className="text-4xl font-bold mb-8">VERITA AUDIT</h1>
       <div className="w-full max-w-4xl rounded-lg p-8 bg-white shadow-md">
-        <h2 className="text-2xl font-semibold text-center mb-6">10. Registro</h2>
+        <h2 className="text-2xl font-semibold text-center mb-6">9. Medicação Concomitante</h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
             <div className="flex items-center gap-2">
-              <Label htmlFor="conteudoRegistro" className="text-base font-semibold">
-                Conteúdo do Registro
+              <Label htmlFor="conteudoEutanasia" className="text-base font-semibold">
+                Conteúdo de Medicação Concomitante
               </Label>
             </div>
 
             <Textarea
-              id="conteudoRegistro"
-              {...register("conteudoRegistro")}
+              id="conteudoEutanasia"
+              {...register("conteudoConcomitante")}
               className="min-h-[200px] mt-2"
             />
-            <p className="text-red-500 text-sm mt-1">{errors.conteudoRegistro?.message}</p>
+            <p className="text-red-500 text-sm mt-1">{errors.conteudoConcomitante?.message}</p>
           </div>
 
           <div className="flex justify-end pt-6 border-t">
@@ -82,4 +82,4 @@ const FormularioRegistro = () => {
   );
 };
 
-export default FormularioRegistro;
+export default FormularioConcomitante;

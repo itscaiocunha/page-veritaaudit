@@ -42,14 +42,14 @@ const FormularioEutanasia = () => {
 
     await new Promise((resolve) => setTimeout(resolve, 500));
     setIsSubmitting(false);
-    navigate("/registro");
+    navigate("/cronograma");
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center py-8 px-4 bg-gray-50 font-inter">
       <h1 className="text-4xl font-bold mb-8">VERITA AUDIT</h1>
       <div className="w-full max-w-4xl rounded-lg p-8 bg-white shadow-md">
-        <h2 className="text-2xl font-semibold text-center mb-6">9. Eutanásia ou Mortalidade Não Programada</h2>
+        <h2 className="text-2xl font-semibold text-center mb-6">10. Eutanásia ou Mortalidade Não Programada</h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>

@@ -9,14 +9,7 @@ import { useState, useEffect } from "react";
 
 // --- Schema de Validação para a seção 8 ---
 const validationSchema = yup.object({
-  definicao: yup.string().required("Este campo é obrigatório."),
-  classificacao: yup.string().required("Este campo é obrigatório."),
-  gravidadeEA: yup.string().required("Este campo é obrigatório."),
-  intensidadeEA: yup.string().required("Este campo é obrigatório."),
-  relacaoEATerapia: yup.string().required("Este campo é obrigatório."),
-  expectativa: yup.string().required("Este campo é obrigatório."),
-  desfechoEA: yup.string().required("Este campo é obrigatório."),
-  registroNotificacaoEA: yup.string().required("Este campo é obrigatório."),
+  conteudoEventoAdverso: yup.string().required("Este campo é obrigatório."),
 });
 
 type FormValues = yup.InferType<typeof validationSchema>;
@@ -49,7 +42,7 @@ const FormularioEventoAdverso = () => {
 
     await new Promise((resolve) => setTimeout(resolve, 500));
     setIsSubmitting(false);
-    navigate("/eutanasia"); 
+    navigate("/medicacao-concomitante"); 
   };
 
   return (
@@ -60,30 +53,18 @@ const FormularioEventoAdverso = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           
-          {/* Mapeamento dos campos da seção de Evento Adverso */}
-          {[
-            { id: "definicao", label: "8.1 Definição" },
-            { id: "classificacao", label: "8.2 Classificação" },
-            { id: "gravidadeEA", label: "8.3 Gravidade do EA" },
-            { id: "intensidadeEA", label: "8.4 Intensidade do EA" },
-            { id: "relacaoEATerapia", label: "8.5 Relação do EA com a terapia" },
-            { id: "expectativa", label: "8.6 Expectativa" },
-            { id: "desfechoEA", label: "8.7 Desfecho do EA" },
-            { id: "registroNotificacaoEA", label: "8.8 Registro e notificação do EA" },
-          ].map(field => (
-            <div key={field.id}>
-              <Label htmlFor={field.id} className="text-base font-semibold">{field.label}</Label>
-              <Textarea
-                id={field.id}
-                {...register(field.id as keyof FormValues)}
-                className="min-h-[120px] mt-2"
-              />
-              <p className="text-red-500 text-sm mt-1">{errors[field.id as keyof FormValues]?.message}</p>
-            </div>
-          ))}
+          <div>
+            <Label htmlFor="conteudoEventoAdverso" className="text-base font-semibold">Conteúdo de Evento Adverso</Label>
+            <Textarea
+              id="conteudoEventoAdverso"
+              {...register("conteudoEventoAdverso")}
+              className="min-h-[250px] mt-2"
+            />
+            <p className="text-red-500 text-sm mt-1">{errors.conteudoEventoAdverso?.message}</p>
+          </div>
 
           {/* Botão de Submissão */}
-          <div className="flex justify-end pt-6 border-t">
+          <div className="flex justify-end pt-6">
             <Button
               type="submit"
               className="bg-[#90EE90] hover:bg-[#7CCD7C] text-black font-bold px-8 py-3 text-lg h-auto rounded-md"
