@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, Home } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useNavigate, BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // --- HELPERS ---
 const PageWrapper = ({ children, innerRef, codigoEstudo }: { children: React.ReactNode, innerRef?: React.Ref<HTMLDivElement>, codigoEstudo?: string }) => (
@@ -51,13 +52,10 @@ const Capa = ({ data }: { data: any }) => (
         </div>
         <div className="text-base space-y-3">
              <div className="flex"><p className="font-bold w-64 shrink-0">ESTUDO CLÍNICO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.tipoEstudo || ''}</span></div></div>
-             <div className="flex"><p className="font-bold w-64 shrink-0">PATROCINADOR</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.patrocinador?.patrocinador?.nome || ''}</span></div></div>
-             <div className="flex"><p className="font-bold w-64 shrink-0">RESPONSÁVEL PELO ESTUDO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.instituicao?.investigador?.nome || ''}</span></div></div>
-             <div className="flex"><p className="font-bold w-64 shrink-0">ESPÉCIE ALVO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.especie || 'Não informado'}</span></div></div>
+             <div className="flex"><p className="font-bold w-64 shrink-0">PATROCINADOR</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.patrocinador?.patrocinador?.nome || ''}</span></div></div>              <div className="flex"><p className="font-bold w-64 shrink-0">ESPÉCIE ALVO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.especie || 'Não informado'}</span></div></div>
              <div className="flex"><p className="font-bold w-64 shrink-0">CLASSE TERAPÊUTICA</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.tipoProduto || 'Não informado'}</span></div></div>
              <div className="flex"><p className="font-bold w-64 shrink-0">CÓDIGO DO ESTUDO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.codigoEstudo || ''}</span></div></div>
              <div className="flex"><p className="font-bold w-64 shrink-0">VERSÃO E DATA</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.versaoData || ''}</span></div></div>
-             <div className="flex"><p className="font-bold w-64 shrink-0">DURAÇÃO DO ESTUDO CLÍNICO:</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.cronograma?.duracaoEstudo ? `${data.cronograma.duracaoEstudo} dias` : ''}</span></div></div>
         </div>
     </PageWrapper>
 );
@@ -218,7 +216,7 @@ const PaginaMaterialMetodoPt2 = ({ data, codigoEstudo }: { data: any, codigoEstu
                 <section>
                     <h3 className="font-bold text-base mb-2">5.9 Tratamento</h3>
                     <div className="pl-4 space-y-4">
-                        <div><h4 className="font-semibold">Descrição</h4><p className="pl-2 whitespace-pre-wrap">{data.tratamento?.descricao}</p></div>
+                         <div><h4 className="font-semibold">Descrição</h4><p className="pl-2 whitespace-pre-wrap">{data.tratamento?.descricao}</p></div>
                         <div>
                             <h4 className="font-semibold">Produto Veterinário Investigacional (PVI)</h4>
                             <div className="pl-2"><p><strong>Identificação:</strong> {data.tratamento?.pvi?.identificacao}</p><p><strong>Princípio Ativo:</strong> {data.tratamento?.pvi?.principioAtivo}</p></div>
@@ -277,8 +275,10 @@ const VisualizacaoCompletaPDF = () => {
     const [allData, setAllData] = useState<any>(null);
     const [scriptsLoaded, setScriptsLoaded] = useState(false);
     const pdfRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
 
     const handleGoBack = () => window.history.back();
+    const handleGoHome = () => navigate('/dashboard');
 
     useEffect(() => {
         const jspdfScript = document.createElement('script');
@@ -378,9 +378,15 @@ const VisualizacaoCompletaPDF = () => {
                     Voltar
                 </Button>
                 <h1 className="text-xl font-bold">Visualização do Protocolo Final</h1>
-                <Button onClick={handleExportPdf} className="bg-green-500 hover:bg-green-600" disabled={!scriptsLoaded}>
-                    {scriptsLoaded ? <><Download className="h-4 w-4 mr-2" />Baixar PDF</> : 'Carregando...'}
-                </Button>
+                <div className="flex items-center gap-2">
+                     <Button variant="outline" onClick={handleGoHome}>
+                        <Home className="h-4 w-4 mr-2" />
+                        Home
+                    </Button>
+                    <Button onClick={handleExportPdf} className="bg-green-500 hover:bg-green-600" disabled={!scriptsLoaded}>
+                        {scriptsLoaded ? <><Download className="h-4 w-4 mr-2" />Baixar PDF</> : 'Carregando...'}
+                    </Button>
+                </div>
              </div>
              <div ref={pdfRef} className="py-8 flex flex-col items-center gap-8 bg-gray-200">
                 <Capa data={allData} />
@@ -405,4 +411,13 @@ const VisualizacaoCompletaPDF = () => {
     );
 };
 
-export default VisualizacaoCompletaPDF;
+const App = () => (
+    <Router>
+        <Routes>
+            <Route path="*" element={<VisualizacaoCompletaPDF />} />
+        </Routes>
+    </Router>
+);
+
+
+export default App;

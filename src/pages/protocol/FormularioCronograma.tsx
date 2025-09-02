@@ -75,7 +75,7 @@ const FormularioCronograma = () => {
     <div className="min-h-screen flex flex-col items-center py-8 px-4 bg-gray-50 font-inter">
       <h1 className="text-4xl font-bold mb-8">VERITA AUDIT</h1>
       <div className="w-full max-w-5xl rounded-lg p-8 bg-white shadow-md">
-        <h2 className="text-2xl font-semibold text-center mb-8">11. Cronograma do Estudo</h2>
+        <h2 className="text-2xl font-semibold text-center mb-8">12. Cronograma do Estudo</h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           
@@ -98,7 +98,7 @@ const FormularioCronograma = () => {
                             <TableHead className="w-1/6">Dia do estudo</TableHead>
                             <TableHead className="w-1/6">Datas</TableHead>
                             <TableHead className="w-3/6">Atividade</TableHead>
-                            <TableHead className="w-1/6">Fichas</TableHead>
+                            <TableHead className="w-1/6">Nº do Formulário</TableHead>
                             <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
                     </TableHeader>

@@ -185,7 +185,7 @@ const Dashboard: React.FC<DashboardProps> = ({ formData }) => {
                 <div className="col-span-full text-center text-gray-500 py-12">Nenhum protocolo encontrado.</div>
               ) : (
                 protocolos.map((p) => (
-                  <ProtocoloCard key={p.index} protocolo={p} onClick={() => navigate(`/capa/${p.codigo}`)} />
+                  <ProtocoloCard key={p.index} protocolo={p} onClick={() => navigate(`/protocolo-final`)} />
                 ))
               )}
             </div>

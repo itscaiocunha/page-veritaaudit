@@ -426,7 +426,7 @@ const FormularioParticipantes = () => {
                             {isSubmitting ? (
                                 <div className="flex items-center gap-2"><LoadingSpinner /> Salvando...</div>
                             ) : (
-                                'Salvar e Avançar'
+                                'Avançar'
                             )}
                         </Button>
                     </div>

@@ -156,7 +156,7 @@ const LocalProtocol = () => {
         
         await new Promise(resolve => setTimeout(resolve, 500));
         setIsSubmitting(false);
-        navigate("/capa/07-0001-25");
+        navigate("/introducao");
     };
 
     const handleCepLookup = async (cep: string, arrayName: ArrayName, index: number) => {

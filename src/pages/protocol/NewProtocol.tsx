@@ -10,6 +10,7 @@ const Protocolo = () => {
   // --- Estados do Formulário ---
   const [titulo, setTitulo] = useState("");
   const [patrocinador, setPatrocinador] = useState("");
+  const [instituicao, setInstituicao] = useState("");
   const [responsavel, setResponsavel] = useState("");
   const [codigoEstudo, setCodigoEstudo] = useState("");
   const [tipoEstudo, setTipoEstudo] = useState("");
@@ -28,6 +29,7 @@ const Protocolo = () => {
   const schema = yup.object().shape({
     titulo: yup.string().required("O título é obrigatório"),
     patrocinador: yup.string().required("O patrocinador é obrigatório"),
+    instituicao: yup.string().required("A instituicao é obrigatório"),
     responsavel: yup.string().required("O responsável é obrigatório"),
     tipoEstudo: yup.string().required("O tipo de estudo é obrigatório"),
     tipoProduto: yup.string().required("A classe terapêutica é obrigatória"),
@@ -56,7 +58,7 @@ const Protocolo = () => {
     try {
       setErrors({});
       const dadosFormulario = {
-        titulo, patrocinador, responsavel,
+        titulo, patrocinador, instituicao, responsavel,
         tipoEstudo, tipoProduto, especie,
         codigoEstudo: gerarCodigo(patrocinador)
       };
@@ -97,6 +99,7 @@ const Protocolo = () => {
     if (dadosSalvos) {
       setTitulo(dadosSalvos.titulo || "");
       setPatrocinador(dadosSalvos.patrocinador || "");
+      setInstituicao(dadosSalvos.instituicao || "");
       setTipoEstudo(dadosSalvos.TipoEstudo || "");
       setResponsavel(dadosSalvos.responsavel || "");
       setTipoProduto(dadosSalvos.tipoProduto || "");
@@ -135,6 +138,7 @@ const Protocolo = () => {
     const dadosFormulario = {
       titulo,
       patrocinador,
+      instituicao,
       responsavel,
       tipoEstudo,
       tipoProduto,
@@ -148,6 +152,7 @@ const Protocolo = () => {
   }, [
     titulo,
     patrocinador,
+    instituicao,
     responsavel,
     tipoEstudo,
     tipoProduto,
@@ -167,7 +172,7 @@ const Protocolo = () => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
       {/* Formulário à esquerda */}
-      <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-8">
+      <div className="w-full flex flex-col justify-center items-center p-8">
         <div className="w-full max-w-md space-y-4">
           <h1 className="text-3xl font-semibold text-center mb-6">Novo Protocolo</h1>
           <form className="space-y-3" onSubmit={handleCriar}>
@@ -180,11 +185,15 @@ const Protocolo = () => {
               {errors.patrocinador && <p className="text-red-500 text-xs mt-1">{errors.patrocinador}</p>}
             </div>
             <div>
+              <Input type="text" placeholder="Instituição" className="py-3 h-12 text-base" value={instituicao} onChange={(e) => setInstituicao(e.target.value)} />
+              {errors.instituicao && <p className="text-red-500 text-xs mt-1">{errors.instituicao}</p>}
+            </div>
+            <div>
               <select value={tipoEstudo} onChange={(e) => setTipoEstudo(e.target.value)} className="w-full border border-gray-300 rounded-md py-3 px-4 h-12 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 <option value="" disabled>Selecione o tipo de estudo</option>
-                <option value="EC Eficácia">Eficácia</option>
-                <option value="EC Segurança">Segurança</option>
-                <option value="EC Resíduo">Resíduo</option>
+                <option value="EFICACIA">Eficácia</option>
+                <option value="SEGURANCA">Segurança</option>
+                <option value="RESIDUO">Resíduo</option>
               </select>
               {errors.tipoEstudo && <p className="text-red-500 text-xs mt-1">{errors.tipoEstudo}</p>}
             </div>
@@ -233,7 +242,7 @@ const Protocolo = () => {
             <div>
               <select value={especie} onChange={(e) => setEspecie(e.target.value)} className="w-full border border-gray-300 rounded-md py-3 px-4 h-12 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 <option value="" disabled>Selecione a espécie animal</option>
-                <option value="Anfíbio">Anfíbio</option>
+                <option value="ANFIBIO">Anfíbio</option>
                 <option value="Ave">Ave</option>
                 <option value="Abelhas">Abelhas</option>
                 <option value="Bovino">Bovino</option>
@@ -272,43 +281,9 @@ const Protocolo = () => {
               {errors.responsavel && <p className="text-red-500 text-xs mt-1">{errors.responsavel}</p>}
             </div>
             <Button type="submit" className="w-full bg-green-400 hover:bg-green-500 text-black py-3 h-12 text-base font-semibold">
-              Criar Protocolo
+              Avançar
             </Button>
           </form>
-        </div>
-      </div>
-
-      {/* Emulador da capa do protocolo à direita */}
-      <div className="w-full md:w-1/2 flex items-center justify-center overflow-hidden p-4">
-        <div ref={capaRef} className="bg-white shadow-lg p-8 flex flex-col font-serif" style={{ width: 'calc((90vh) * 0.707)', height: 'calc(90vh)', overflow: 'hidden' }}>
-          {/* Cabeçalho */}
-          <div className="flex justify-between items-start text-[10px]">
-            <div className="border border-black w-44 h-20 flex items-center justify-center text-center p-1"><p className="font-bold">LOGO DA CRO/UNIVERSIDADE</p></div>
-            <div className="border border-black w-44 h-20 flex items-center justify-center text-center p-1"><p className="font-bold">LOGO DO PATROCINADOR</p></div>
-          </div>
-          {/* Título Principal */}
-          <div className="text-center my-4">
-            <p className="text-sm">Protocolo Nº{codigoEstudo}</p>
-            <h1 className="text-lg font-bold my-3 uppercase">Protocolo de Estudo</h1>
-            <div className="border-black mt-2 mx-4 h-4 text-center">
-              <span className="text-black/80 font-semibold">{titulo || ''}</span>
-            </div>
-          </div>
-          {/* Corpo do Formulário */}
-          <div className="flex-grow text-sm">    
-            <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">PATROCINADOR</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{patrocinador || ''}</span></div></div>
-            <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">ESTUDO CLÍNICO</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{tipoEstudo || ''}</span></div></div>        
-            <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">CÓDIGO DO ESTUDO</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{codigoEstudo || ''}</span></div></div>
-            <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">CLASSE TERAPÊUTICA</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{tipoProduto || ''}</span></div></div>
-            <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">ESPÉCIE(S) ALVO</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{especie || ''}</span></div></div>
-            <div className="flex items-center mt-2"><p className="font-bold w-60 shrink-0">VERSÃO E DATA</p><div className="border-black w-full h-4"><span className="text-black/80 pl-2">{versaoDataAutomatica}</span></div></div>
-          </div>
-          {/* Rodapé */}
-          <div className="mt-auto">
-            <footer className="text-xs mt-auto pt-8 space-y-2 text-justify">
-              <p>Este documento contém informações confidenciais e sigilosas. Qualquer reprodução, compartilhamento ou uso impróprio deste conteúdo fora do ambiente das empresas envolvidas, sem prévio consentimento por escrito, é expressamente proibido.</p>
-            </footer>
-          </div>
         </div>
       </div>
     </div>
