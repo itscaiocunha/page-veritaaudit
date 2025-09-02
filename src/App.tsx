@@ -15,26 +15,26 @@ import NovaSenha from "./pages/auth/NovaSenha";
 import Validacao from "./pages/auth/Validacao";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
-import Protocolo from "./pages/protocol/NewProtocol";
-import DataPatrocinador from "./pages/protocol/DataPatrocinador"
-import DataInstituicao from "./pages/protocol/DataInstituicao"
-import LocalProtocol from "./pages/protocol/LocalProtocol";
-import ProdutoVeterinario from "./pages/protocol/ProdutoVeterinario";
+import Protocolo from "./pages/protocol/_capa/NewProtocol";
+import DataPatrocinador from "./pages/protocol/_capa/DataPatrocinador"
+import DataInstituicao from "./pages/protocol/_capa/DataInstituicao"
+import LocalProtocol from "./pages/protocol/_capa/LocalProtocol";
+import ProdutoVeterinario from "./pages/protocol/_capa/ProdutoVeterinario";
 import VisualizacaoCapaPDF from "./pages/protocol/CapaPDF";
-import FormularioIntroducao from "./pages/protocol/FormularioIntroducao";
-import FormularioObservacao from "./pages/protocol/FormularioObjetivo";
-import FormularioJustificativa from "./pages/protocol/FormularioJustificativa";
-import FormularioRequisitos from "./pages/protocol/FormularioRequisitos";
-import FormularioMetodo from "./pages/protocol/FormularioMaterial";
-import FormularioEstatistica from "./pages/protocol/FormularioEstatistica";
-import FormularioSaude from "./pages/protocol/FormularioSaude";
-import FormularioEventoAdverso from "./pages/protocol/FormularioEvento";
-import FormularioConcomitante from "./pages/protocol/FormularioConcomitante";
-import FormularioCronograma from "./pages/protocol/FormularioCronograma";
+import FormularioIntroducao from "./pages/protocol/_conteudo/FormularioIntroducao";
+import FormularioObservacao from "./pages/protocol/_conteudo/FormularioObjetivo";
+import FormularioJustificativa from "./pages/protocol/_conteudo/FormularioJustificativa";
+import FormularioRequisitos from "./pages/protocol/_conteudo/FormularioRequisitos";
+import FormularioMetodo from "./pages/protocol/_conteudo/FormularioMaterial";
+import FormularioEstatistica from "./pages/protocol/_conteudo/FormularioEstatistica";
+import FormularioSaude from "./pages/protocol/_conteudo/FormularioSaude";
+import FormularioEventoAdverso from "./pages/protocol/_conteudo/FormularioEvento";
+import FormularioConcomitante from "./pages/protocol/_conteudo/FormularioConcomitante";
+import FormularioCronograma from "./pages/protocol/_conteudo/FormularioCronograma";
 import VisualizacaoCompletaPDF from "./pages/protocol/ProtocolFinal";
-import FormularioEutanasia from "./pages/protocol/FormularioEutanasia";
-import FormularioAnexos from "./pages/protocol/FormularioAnexos";
-import FormularioBibliografia from "./pages/protocol/FormularioBibliografia";
+import FormularioEutanasia from "./pages/protocol/_conteudo/FormularioEutanasia";
+import FormularioAnexos from "./pages/protocol/_conteudo/FormularioAnexos";
+import FormularioBibliografia from "./pages/protocol/_conteudo/FormularioBibliografia";
 
 const queryClient = new QueryClient();
 
@@ -57,9 +57,9 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
 
           <Route path="/dashboard" element={<Dashboard formData={{ name: "Caio" }} />} />
-          <Route path="/protocolo"  element={<Protocolo />}/>
-          <Route path="/patrocinador-cadastro"  element={<DataPatrocinador />}/>
-          <Route path="/instituicao-cadastro"  element={<DataInstituicao />}/>
+          <Route path="/protocolo/criar"  element={<Protocolo />}/>
+          <Route path="/protocolo/patrocinador"  element={<DataPatrocinador />}/>
+          <Route path="/protocolo/instituicao"  element={<DataInstituicao />}/>
           <Route path="/local-protocol"  element={<LocalProtocol />}/>
           <Route path="/produto-veterinario"  element={<ProdutoVeterinario />}/>
           <Route path="/capa/:codigoEstudo" element={<VisualizacaoCapaPDF/>}/>

@@ -412,11 +412,9 @@ const VisualizacaoCompletaPDF = () => {
 };
 
 const App = () => (
-    <Router>
-        <Routes>
-            <Route path="*" element={<VisualizacaoCompletaPDF />} />
-        </Routes>
-    </Router>
+    <Routes>
+        <Route path="*" element={<VisualizacaoCompletaPDF />} />
+    </Routes>
 );
 
 

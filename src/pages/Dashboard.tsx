@@ -173,7 +173,7 @@ const Dashboard: React.FC<DashboardProps> = ({ formData }) => {
               {/* Criar Novo */}
               <div
                 role="button"
-                onClick={() => navigate("/protocolo")}
+                onClick={() => navigate("/protocolo/criar")}
                 className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-6 text-gray-500 hover:bg-gray-100 hover:border-gray-400 transition h-full min-h-[250px] cursor-pointer"
               >
                 <PlusCircle className="h-10 w-10 mb-2" />
