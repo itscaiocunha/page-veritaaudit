@@ -6,26 +6,17 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import axios from "axios"; // Keep for isAxiosError
-// import ReCAPTCHA from "react-google-recaptcha"; // Commented out as in original
-import api from "@/lib/axios"; // Your pre-configured axios instance
+import axios from "axios";
+import ReCAPTCHA from "react-google-recaptcha";
+import api from "@/lib/axios";
 
-// Configuração do axios para interceptors (global, good to have it here or in a central place)
-// This interceptor seems to be for a global instance of axios, not necessarily the 'api' instance.
-// If 'api' is a separate instance, ensure it also has necessary interceptors or inherits them.
-// For this example, I'll assume 'api' might trigger this or has its own.
 axios.interceptors.response.use(
   response => response,
   error => {
     if (error.response?.status === 401) {
-      // Check if the error is for qualification, if so, don't just remove token and redirect to login
-      // This global interceptor might conflict with specific 401 handling in the component.
-      // We'll rely on the component's specific logic for the "not qualified" case.
-      // For other 401s, this is a fallback.
       const errorMessage = error.response?.data?.message;
       if (errorMessage !== 'Usuário ainda não qualificado! Utilize o token abaixo para realizar a qualificação.') {
         sessionStorage.removeItem('token');
-        // Consider redirecting only if not already on login page to avoid loops
         if (window.location.pathname !== '/login') {
             window.location.href = '/login';
         }
@@ -48,37 +39,31 @@ type FormData = yup.InferType<typeof schema>;
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  // const [captchaVerified, setCaptchaVerified] = useState<string | null>(null); // As per original
+  // const [captchaVerified, setCaptchaVerified] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<FormData>({
     resolver: yupResolver(schema),
-    defaultValues: { // Set default value for email from localStorage here
+    defaultValues: {
       email: localStorage.getItem('rememberedEmail') || ''
     }
   });
 
   const [emailTouched, setEmailTouched] = useState(false);
 
-  // Load "remember me" preference on component mount
   useEffect(() => {
     const rememberedEmail = localStorage.getItem('rememberedEmail');
     if (rememberedEmail) {
-      setValue('email', rememberedEmail); // Set value in form
-      setRememberMe(true); // Check the checkbox
+      setValue('email', rememberedEmail);
+      setRememberMe(true);
     }
   }, [setValue]);
 
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!emailTouched) setEmailTouched(true);
-    // react-hook-form's register already handles onChange, so setValue might be redundant
-    // unless specific validation timing is needed. 'register' typically updates the form state.
-    // For direct control or complex logic, setValue is fine.
-    // The 'onChange' from register will call setValue internally.
-    // If you keep this, ensure it works as expected with shouldValidate.
     setValue('email', e.target.value, { shouldValidate: emailTouched });
   };
 
@@ -89,13 +74,13 @@ const Login = () => {
     // }
 
     setLoading(true);
-    setErrorMessage(''); // Clear previous error messages at the start
+    setErrorMessage('');
 
     try {
       const response = await api.post('/user/login', {
         email: data.email,
-        senha: data.password, // Ensure backend expects 'senha'
-        // captcha: captchaVerified // As per original
+        senha: data.password,
+        // captcha: captchaVerified
       });
     
       if (rememberMe) {
@@ -104,47 +89,38 @@ const Login = () => {
         localStorage.removeItem('rememberedEmail');
       }
     
-      sessionStorage.setItem('token', response.data.token); // Store the main login token
+      sessionStorage.setItem('token', response.data.token);
         
-      // The original code directly navigated to /qualificacao on successful login.
-      // We keep this behavior. If successful login means qualified, this is correct.
-      // If successful login *might* still need qualification, the API response for success
-      // would need to indicate that, and you'd handle it here.
       navigate('/dashboard', { replace: true });
 
     } catch (error) {
-      if (axios.isAxiosError(error)) { // Use the imported axios for type checking
+      if (axios.isAxiosError(error)) {
         const statusCode = error.response?.status;
-        const errorData = error.response?.data; // Contains message and potentially token
+        const errorData = error.response?.data;
         const errorMessageFromApi = errorData?.message;
-        const qualificationTokenFromApi = errorData?.token; // Token for qualification step
+        const qualificationTokenFromApi = errorData?.token;
 
         if (statusCode === 401) {
           if (errorMessageFromApi === 'Usuário ainda não qualificado! Utilize o token abaixo para realizar a qualificação.' && qualificationTokenFromApi) {
-            // Specific scenario: User needs to qualify
-            setErrorMessage('Você precisa concluir a etapa de qualificação para continuar.'); // Inform user
-            sessionStorage.setItem('token', qualificationTokenFromApi); // Store the qualification token
-            navigate('/qualificacao', { replace: true }); // Redirect to qualification page
+            setErrorMessage('Você precisa concluir a etapa de qualificação para continuar.');
+            sessionStorage.setItem('token', qualificationTokenFromApi);
+            navigate('/qualificacao', { replace: true });
           } else if (errorMessageFromApi === 'Usuário ainda não autenticado por e-mail') {
             setErrorMessage('Por favor, valide seu e-mail para prosseguir.');
-            navigate('/verificacao-email'); // Redirect to email verification page
+            navigate('/verificacao/email');
           } else if (errorMessageFromApi === 'Usuário ainda não autenticado por sms') {
             setErrorMessage('Por favor, valide seu número de telefone via SMS.');
-            navigate('/verificacao-sms'); // Redirect to SMS verification page
+            navigate('/verificacao/sms');
           } else {
-            // Generic 401 for login (e.g., wrong credentials)
             setErrorMessage(errorMessageFromApi || 'E-mail ou senha incorretos.');
           }
         } else if (errorMessageFromApi) {
-          // Other non-401 errors with a message from API
           setErrorMessage(errorMessageFromApi);
         } else {
-          // Other errors without a specific message from API
           setErrorMessage('Ocorreu um erro na comunicação com o servidor. Tente novamente.');
         }
       } else {
-        // Non-Axios errors (e.g., network issue before request, or coding error)
-        console.error("An unexpected error occurred:", error); // Log for debugging
+        console.error("An unexpected error occurred:", error);
         setErrorMessage('Erro desconhecido. Por favor, tente novamente mais tarde.');
       }
     } finally {
@@ -152,22 +128,20 @@ const Login = () => {
     }
   };
 
-  const handleGovBrLogin = () => {
-    window.location.href = 'https://sso.acesso.gov.br/login';
-  };
+  // const handleGovBrLogin = () => {
+  //   window.location.href = 'https://sso.acesso.gov.br/login';
+  // };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Imagem mobile */}
       <div className="md:hidden w-full flex justify-center pt-8">
         <img 
           src="/images/login.png" 
           alt="Login" 
-          className="object-contain h-48 w-auto" // Added h-48 for better control
+          className="object-contain h-48 w-auto"
         />
       </div>
 
-      {/* Formulário */}
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-8">
         <div className="w-full max-w-md space-y-6">
           <h1 className="text-3xl font-semibold text-center mb-8">Login</h1>
@@ -186,14 +160,10 @@ const Login = () => {
                 id="email"
                 type="email"
                 placeholder="seu@email.com"
-                className="pl-10 py-3 h-12 text-base" // Adjusted padding and height
+                className="pl-10 py-3 h-12 text-base"
                 autoComplete="username"
-                // defaultValue is handled by useForm's defaultValues
                 {...register('email')}
-                onChangeCapture={handleEmailChange} // Use onChangeCapture if you want your handler to run before RHF's
-                                                   // or just rely on RHF's default onChange from register
-                                                   // If handleEmailChange is essential for your logic, ensure it's correct.
-                                                   // Usually, RHF's `register` is enough.
+                onChangeCapture={handleEmailChange}
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
@@ -206,14 +176,14 @@ const Login = () => {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Sua senha"
-                className="pr-10 py-3 h-12 text-base" // Adjusted padding and height
+                className="pr-10 py-3 h-12 text-base"
                 autoComplete="current-password"
                 {...register('password')}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1" // Added padding for easier click
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
                 aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
               >
                 {showPassword ? (
@@ -250,7 +220,7 @@ const Login = () => {
             </div>
                             
             {/* <ReCAPTCHA
-              sitekey="YOUR_RECAPTCHA_SITE_KEY" // Replace with your actual site key
+              sitekey="YOUR_RECAPTCHA_SITE_KEY"
               onChange={(token) => setCaptchaVerified(token)}
               onExpired={() => setCaptchaVerified(null)}
               size="normal"
@@ -259,7 +229,7 @@ const Login = () => {
 
             <Button 
               type="submit"
-              className="w-full bg-[#90EE90] hover:bg-[#7CCD7C] text-white py-3 h-12 text-base font-semibold" // Adjusted styles
+              className="w-full bg-[#90EE90] hover:bg-[#7CCD7C] text-white py-3 h-12 text-base font-semibold" 
               disabled={loading}
             >
               {loading ? 'Carregando...' : 'Entrar'}
@@ -284,7 +254,7 @@ const Login = () => {
             </Button> 
             */}
 
-            <div className="text-center pt-4"> {/* Added padding top */}
+            <div className="text-center pt-4">
               <Link to="/cadastro" className="text-sm text-[#90EE90] hover:underline block">
                 Não possuo login!
               </Link>

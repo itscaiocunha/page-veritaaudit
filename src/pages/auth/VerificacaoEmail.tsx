@@ -8,7 +8,7 @@ import {
 import { toast } from "@/components/ui/sonner";
 import { useNavigate } from "react-router-dom";
 import api from "@/lib/axios";
-import axios from "axios"; // Importe axios se estiver usando axios.isAxiosError
+import axios from "axios";
 
 const ValidarEmail = () => {
   const [value, setValue] = useState("");
@@ -18,22 +18,19 @@ const ValidarEmail = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [validationToken, setValidationToken] = useState<string | null>(null);
   const navigate = useNavigate();
+  
+  const userIdentifier = localStorage.getItem('userEmail');
 
-  // Obtenha o identificador do usuário. Adapte esta linha conforme onde você armazena.
-  const userIdentifier = localStorage.getItem('userEmail') || 'caiogrilocunha@gmail.com';
-
-  // Efeito para controlar tempo de reenvio (5 minutos)
   useEffect(() => {
     if (lastSentTime) {
       const timer = setTimeout(() => {
         setCanResend(true);
-      }, 300000); // <-- ALTERADO: 300000 milissegundos = 5 minutos
+      }, 300000);
 
       return () => clearTimeout(timer);
     }
   }, [lastSentTime]);
 
-  // --- Função para enviar o código ---
   const sendVerificationCode = async () => {
     if (!userIdentifier) {
       toast.error("Erro: Identificador do usuário não encontrado. Por favor, refaça o login.");
@@ -107,7 +104,7 @@ const ValidarEmail = () => {
         toast.success("E-mail validado com sucesso!");
         setValue("");
         setAttempts(0);
-        navigate('/verificacao-sms');
+        navigate('/verificacao/sms');
       } else {
         setAttempts(prev => prev + 1);
         const remainingAttempts = 3 - attempts - 1;
@@ -132,7 +129,6 @@ const ValidarEmail = () => {
 
   const handleResendCode = () => {
     if (!canResend && lastSentTime) {
-      // Cálculo do tempo restante em segundos
       const timeLeft = Math.ceil((300000 - (Date.now() - lastSentTime.getTime())) / 1000);
       const minutes = Math.floor(timeLeft / 60);
       const seconds = timeLeft % 60;
@@ -146,7 +142,6 @@ const ValidarEmail = () => {
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
       <div className="w-full max-w-md border-[3px] border-[#90EE90] rounded-lg p-8 flex flex-col items-center">
         <div className="bg-gray-200 w-24 h-12 mb-6 flex items-center justify-center" aria-hidden="true">
-          {/* Logo placeholder */}
         </div>
 
         <h1 className="text-2xl font-semibold mb-2 text-center">Valide seu e-mail</h1>

@@ -11,7 +11,6 @@ import { toast } from "react-toastify";
 import InputMask from "react-input-mask";
 import api from '@/lib/axios';
 
-// Validação (sem alterações)
 const schema = yup.object({
   foto: yup.string().required("Foto é obrigatíorio"),
   nome: yup.string().required("Nome completo é obrigatório"),
@@ -48,7 +47,6 @@ interface PasswordRequirementProps {
   hasValue: boolean;
 }
 
-// Componente do Modal da Câmera (integrado e com tipos)
 const CameraModal = ({ isOpen, onClose, onPictureTaken }: CameraModalProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -131,7 +129,6 @@ const CameraModal = ({ isOpen, onClose, onPictureTaken }: CameraModalProps) => {
   );
 };
 
-// Componente Principal de Cadastro
 const Cadastro = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState(1);
@@ -209,7 +206,7 @@ const Cadastro = () => {
           cnpj: data.cnpj.replace(/\D/g, ''),
           razaoSocial: data.razaoSocial || "Não Informado",
           tipoEmpresa: data.tipoEmpresa,
-          relacaoEmpresa: data.relacaoEmpresa || "Não Informado"
+          relacaoEmpresa: data.relacaoEmpresa
         }
       };
       const jsonBlob = new Blob([JSON.stringify(dadosParaEnviar)], { type: 'application/json' });
@@ -227,7 +224,7 @@ const Cadastro = () => {
         setSelectedFile(null);
         localStorage.setItem('userEmail', response.data.emailPrincipal || data.emailPrincipal);
         localStorage.setItem('userTelefone', response.data.telefone || response.data.celular || data.telefone.replace(/\D/g, ''));
-        setTimeout(() => navigate('/verificacao-email'), 2000);
+        setTimeout(() => navigate('/verificacao/email'), 2000);
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
