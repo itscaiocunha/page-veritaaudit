@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm, useFieldArray, Controller, FieldPath } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 const phoneRegExp = /^\(\d{2}\) \d{5}-\d{4}$/;
 const cepRegExp = /^\d{5}-\d{3}$/;
 
+// --- Máscaras ---
 const applyPhoneMask = (value: string) => {
     if (!value) return "";
     return value.replace(/\D/g, "").replace(/^(\d{2})(\d)/, "($1) $2").replace(/(\d)(\d{4})$/, "$1-$2").slice(0, 15);
@@ -26,11 +27,12 @@ const RequiredField = ({ children }: { children: React.ReactNode }) => (
   <>{children} <span className="text-red-500 font-bold">*</span></>
 );
 
+// --- Icone de Carregando ---
 const LoadingSpinner = () => (
     <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
 );
 
-// Schema reutilizável para o endereço
+// Schema de Validação
 const addressSchema = yup.object().shape({
     cep: yup.string().matches(cepRegExp, "CEP inválido. Use XXXXX-XXX").required("O CEP é obrigatório."),
     logradouro: yup.string().required("O logradouro é obrigatório."),
@@ -111,6 +113,7 @@ const FormularioInstituicao = () => {
         navigate('/local-protocol');
     };
 
+    // --- CEP ---
     const handleCepLookup = async (cep: string, basePath: string) => {
         const cleanedCep = cep.replace(/\D/g, "");
         if (cleanedCep.length !== 8) return;
@@ -182,10 +185,23 @@ const FormularioInstituicao = () => {
     );
 
     return (
-        <div className="min-h-screen flex flex-col items-center py-8 px-4 bg-gray-50 font-inter">
-            <h1 className="text-4xl font-bold mb-8">VERITA AUDIT</h1>
-            <div className="w-full max-w-4xl rounded-lg p-8 bg-white shadow-md">
-                <h2 className="text-2xl font-semibold text-center mb-6">Informações da Instituição de Pesquisa</h2>
+        <div className="min-h-screen flex flex-col bg-gray-200">
+            <header className="bg-white/30 backdrop-blur-lg shadow-sm w-full p-4 flex items-center justify-center relative border-b border-white/20">
+                <Button
+                onClick={() => navigate(-1)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-gray hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded-lg inline-flex items-center text-sm"
+                >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                <span className="hidden sm:inline">Voltar</span>
+                </Button>
+                <h1 className="text-xl sm:text-2xl font-bold text-center text-gray-800">Verita Audit</h1>
+            </header>
+
+            <div className="w-full flex flex-col justify-center items-center p-4 md:p-8 flex-grow">
+                <div className="w-full max-w-4xl rounded-2xl p-6 md:p-8 bg-white/30 backdrop-blur-lg shadow-xl border border-white/20">
+                <h1 className="text-2xl md:text-3xl font-semibold text-center mb-6 text-gray-800">Dados da Instituição ou CRO</h1>
                 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     {/* Seção Instituição de Pesquisa */}
@@ -267,6 +283,7 @@ const FormularioInstituicao = () => {
                 </form>
             </div>
         </div>
+    </ div>
     );
 };
 

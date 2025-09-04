@@ -14,11 +14,10 @@ import RecuperarSenha from "./pages/auth/Recuperar";
 import NovaSenha from "./pages/auth/NovaSenha";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
-import Protocolo from "./pages/_protocolo/_protocoloGeral/NewProtocol";
-import DataPatrocinador from "./pages/_protocolo/_protocoloGeral/DataPatrocinador"
-import DataInstituicao from "./pages/_protocolo/_protocoloGeral/DataInstituicao"
-import LocalProtocol from "./pages/_protocolo/_protocoloGeral/LocalProtocol";
-import ProdutoVeterinario from "./pages/_protocolo/_protocoloGeral/ProdutoVeterinario";
+import Protocolo from "./pages/_protocolo/_protocoloGeral/_capa/NewProtocol";
+import DataPatrocinador from "./pages/_protocolo/_protocoloGeral/_capa/DataPatrocinador"
+import DataInstituicao from "./pages/_protocolo/_protocoloGeral/_capa/DataInstituicao"
+import LocalProtocol from "./pages/_protocolo/_protocoloGeral/_capa/LocalProtocol";
 import FormularioIntroducao from "./pages/_protocolo/_protocoloGeral/_conteudo/FormularioIntroducao";
 import FormularioObservacao from "./pages/_protocolo/_protocoloGeral/_conteudo/FormularioObjetivo";
 import FormularioJustificativa from "./pages/_protocolo/_protocoloGeral/_conteudo/FormularioJustificativa";
@@ -65,7 +64,6 @@ const App = () => (
           <Route path="/protocolo/patrocinador"  element={<DataPatrocinador />}/>
           <Route path="/protocolo/instituicao"  element={<DataInstituicao />}/>
           <Route path="/local-protocol"  element={<LocalProtocol />}/>
-          <Route path="/produto-veterinario"  element={<ProdutoVeterinario />}/>
           <Route path="/introducao" element={<FormularioIntroducao/>}/>
           <Route path="/objetivo" element={<FormularioObservacao/>}/>
           <Route path="/justificativa" element={<FormularioJustificativa/>}/>
