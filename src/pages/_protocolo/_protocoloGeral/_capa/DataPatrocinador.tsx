@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useForm, useFieldArray, Controller, FieldPath } from "react-hook-form";
-// import { useNavigate } from 'react-router-dom'; // Removido para corrigir o erro de contexto do Router
+import { useNavigate } from 'react-router-dom';
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ const enderecoSchema = yup.object().shape({
     cep: yup.string().required("O CEP é obrigatório.").min(9, "CEP inválido."),
     logradouro: yup.string().required("O logradouro é obrigatório."),
     numero: yup.string().required("O número é obrigatório."),
-    complemento: yup.string(), // --- Complemento é opcional. ---
+    complemento: yup.string().nullable(), // --- Complemento é opcional. ---
     bairro: yup.string().required("O bairro é obrigatório."),
     cidade: yup.string().required("A cidade é obrigatória."),
     estado: yup.string().required("O estado é obrigatório."),
@@ -80,8 +80,7 @@ const applyCepMask = (value: string) => {
 
 // --- COMPONENTE PRINCIPAL ---
 const FormularioParticipantes = () => {
-    // --- Hook para navegação entre rotas. ---
-    // const navigate = useNavigate(); // Removido para corrigir erro. A navegação deve ser tratada pelo ambiente que renderiza este componente.
+    const navigate = useNavigate();
     // --- Estado para controlar o status de submissão do formulário. ---
     const [isSubmitting, setIsSubmitting] = useState(false);
     // --- Estado para controlar o carregamento da busca de CEP. ---
@@ -121,134 +120,120 @@ const FormularioParticipantes = () => {
     });
 
     // --- Hooks para gerenciar campos de array dinâmicos (monitores e equipe). ---
-    const { fields: monitoresFields, append: appendMonitor, remove: removeMonitor } = useFieldArray({ control, name: "monitores" });
-    const { fields: equipeFields, append: appendEquipe, remove: removeEquipe } = useFieldArray({ control, name: "equipe" });
+    const { fields: monitoresFields, append: appendMonitor, remove: removeMonitor, replace: replaceMonitores } = useFieldArray({ control, name: "monitores" });
+    const { fields: equipeFields, append: appendEquipe, remove: removeEquipe, replace: replaceEquipe } = useFieldArray({ control, name: "equipe" });
 
     // --- EFEITO PARA CARREGAR DADOS INICIAIS ---
-    // --- Busca os dados do patrocinador, representantes, monitores e equipe na API quando o componente é montado. ---
+    // --- Busca os dados do patrocinador e listas da API e preenche o formulário com dados do localStorage, se existirem. ---
     useEffect(() => {
-        const fetchData = async () => {
+        const initializeForm = async () => {
             const capaProtocolDataString = localStorage.getItem('capaProtocolData');
+            const dataPatrocinadorString = localStorage.getItem('dataPatrocinador');
             const jwtToken = sessionStorage.getItem('token');
-            let patrocinadorId = null;
 
-            if (capaProtocolDataString) {
-                try {
-                    const capaData = JSON.parse(capaProtocolDataString);
-                    patrocinadorId = capaData?.protocolo?.patrocinadorId;
-                } catch (error) {
-                    console.error("Erro ao parsear 'capaProtocolData' do localStorage:", error);
-                    return;
-                }
-            }
+            const capaData = capaProtocolDataString ? JSON.parse(capaProtocolDataString) : {};
+            const savedData = dataPatrocinadorString ? JSON.parse(dataPatrocinadorString) : {};
+
+            const patrocinadorId = savedData.patrocinadorId || capaData?.protocolo?.patrocinadorId;
 
             if (!patrocinadorId || !jwtToken) {
                 console.error("ID do patrocinador ou token JWT não encontrado.");
                 return;
             }
+            
+            if (!savedData.patrocinadorId) {
+                 localStorage.setItem('dataPatrocinador', JSON.stringify({ ...savedData, patrocinadorId }));
+            }
 
             const baseUrl = 'https://verita-brgchubha6ceathm.brazilsouth-01.azurewebsites.net';
             const apiKey = '2NtzCUDl8Ib2arnDRck0xK8taguGeFYuZqnUzpiZ9Wp-tUZ45--/i=tKxzwTPBvtykMSx!0t?7c/Z?NllkokY=TEC2DSonmOMUu0gxdCeh70/rA2NSsm7Ohjn7VM2BeP';
-            const headers = {
-                'Authorization': `Bearer ${jwtToken}`,
-                'X-API-KEY': apiKey,
-                'Content-Type': 'application/json',
-            };
+            const headers = { 'Authorization': `Bearer ${jwtToken}`, 'X-API-KEY': apiKey, 'Content-Type': 'application/json' };
 
-            // --- Fetch Patrocinador Data ---
             try {
-                const response = await fetch(`${baseUrl}/api/patrocinador/${patrocinadorId}`, { method: 'GET', headers });
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const data = await response.json();
+                const [sponsorRes, repListRes, monListRes, equipeListRes] = await Promise.all([
+                    fetch(`${baseUrl}/api/patrocinador/${patrocinadorId}`, { headers }),
+                    fetch(`${baseUrl}/api/patrocinador/representante?patrocinador_id=${patrocinadorId}`, { headers }),
+                    fetch(`${baseUrl}/api/patrocinador/monitor?patrocinador_id=${patrocinadorId}`, { headers }),
+                    fetch(`${baseUrl}/api/patrocinador/tecnico?patrocinador_id=${patrocinadorId}`, { headers })
+                ]);
 
-                setValue('patrocinador.nome', data.nome, { shouldValidate: true });
-                setValue('patrocinador.telefone', applyPhoneMask(data.telefone), { shouldValidate: true });
-                if (data.endereco) {
-                    setValue('patrocinador.endereco.cep', applyCepMask(data.endereco.cep), { shouldValidate: true });
-                    setValue('patrocinador.endereco.logradouro', data.endereco.logradouro, { shouldValidate: true });
-                    setValue('patrocinador.endereco.numero', String(data.endereco.numero), { shouldValidate: true });
-                    setValue('patrocinador.endereco.complemento', data.endereco.complemento, { shouldValidate: true });
-                    setValue('patrocinador.endereco.bairro', data.endereco.bairro, { shouldValidate: true });
-                    setValue('patrocinador.endereco.cidade', data.endereco.cidade, { shouldValidate: true });
-                    setValue('patrocinador.endereco.estado', data.endereco.uf, { shouldValidate: true });
+                if (sponsorRes.ok) {
+                    const sponsorData = await sponsorRes.json();
+                    setValue('patrocinador.nome', sponsorData.nome);
+                    setValue('patrocinador.telefone', applyPhoneMask(sponsorData.telefone));
+                    if (sponsorData.endereco) {
+                        setValue('patrocinador.endereco.cep', applyCepMask(sponsorData.endereco.cep));
+                        setValue('patrocinador.endereco.logradouro', sponsorData.endereco.logradouro);
+                        setValue('patrocinador.endereco.numero', String(sponsorData.endereco.numero));
+                        setValue('patrocinador.endereco.complemento', sponsorData.endereco.complemento);
+                        setValue('patrocinador.endereco.bairro', sponsorData.endereco.bairro);
+                        setValue('patrocinador.endereco.cidade', sponsorData.endereco.cidade);
+                        setValue('patrocinador.endereco.estado', sponsorData.endereco.uf);
+                    }
                 }
-            } catch (error) {
-                console.error("Erro ao carregar dados do patrocinador:", error);
-            }
 
-            // --- Fetch Representantes List ---
-            try {
-                const response = await fetch(`${baseUrl}/api/patrocinador/representante?patrocinador_id=${patrocinadorId}`, { method: 'GET', headers });
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const data = await response.json();
-                setRepresentantes(data);
-            } catch (error) {
-                console.error("Erro ao carregar lista de representantes:", error);
-            }
+                if(repListRes.ok) setRepresentantes(await repListRes.json() || []);
+                if(monListRes.ok) setMonitoresList(await monListRes.json() || []);
+                if(equipeListRes.ok) setEquipeList(await equipeListRes.json() || []);
+                
+                if (savedData.representanteId) await handleRepresentanteChange(savedData.representanteId, false);
+                
+                if (savedData.monitorId && savedData.monitorId.length > 0) {
+                    replaceMonitores(savedData.monitorId.map(() => ({ ...defaultPessoa, expanded: true })));
+                    await Promise.all(savedData.monitorId.map((id, index) => id && handleMonitorChange(id, index, false)));
+                }
 
-            // --- Fetch Monitores List ---
-            try {
-                const response = await fetch(`${baseUrl}/api/patrocinador/monitor?patrocinador_id=${patrocinadorId}`, { method: 'GET', headers });
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const data = await response.json();
-                setMonitoresList(data);
-            } catch (error) {
-                console.error("Erro ao carregar lista de monitores:", error);
-            }
+                if (savedData.tecnicoId && savedData.tecnicoId.length > 0) {
+                    replaceEquipe(savedData.tecnicoId.map(() => ({ ...defaultPessoa, expanded: true })));
+                    await Promise.all(savedData.tecnicoId.map((id, index) => id && handleEquipeChange(id, index, false)));
+                }
 
-            // --- Fetch Equipe Tecnica List ---
-            try {
-                const response = await fetch(`${baseUrl}/api/patrocinador/tecnico?patrocinador_id=${patrocinadorId}`, { method: 'GET', headers });
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const data = await response.json();
-                setEquipeList(data);
             } catch (error) {
-                console.error("Erro ao carregar lista da equipe técnica:", error);
+                console.error("Erro durante a inicialização do formulário:", error);
             }
         };
 
-        fetchData();
-    }, [setValue]);
+        initializeForm();
+    }, []);
+
+    // --- Funções Auxiliares para o localStorage ---
+    const getStoredData = () => JSON.parse(localStorage.getItem('dataPatrocinador') || '{}');
+    const updateStoredData = (newData) => localStorage.setItem('dataPatrocinador', JSON.stringify({ ...getStoredData(), ...newData }));
+
 
     // --- Função para lidar com a mudança de representante selecionado ---
-    const handleRepresentanteChange = async (representanteId: string) => {
-        if (!representanteId) {
-            setValue('representante', defaultPessoa, { shouldValidate: true });
-            localStorage.removeItem('representanteId');
-            return;
+    const handleRepresentanteChange = async (representanteId: string, shouldUpdateStorage = true) => {
+        if (shouldUpdateStorage) {
+            updateStoredData({ representanteId: representanteId || null });
         }
+        if (!representanteId) return setValue('representante', defaultPessoa);
 
-        localStorage.setItem('representanteId', representanteId);
         const jwtToken = sessionStorage.getItem('token');
-        if (!jwtToken) {
-            console.error("Token JWT não encontrado para buscar detalhes do representante.");
-            return;
-        }
+        if (!jwtToken) return console.error("Token JWT não encontrado.");
 
         try {
             const baseUrl = 'https://verita-brgchubha6ceathm.brazilsouth-01.azurewebsites.net';
             const apiKey = '2NtzCUDl8Ib2arnDRck0xK8taguGeFYuZqnUzpiZ9Wp-tUZ45--/i=tKxzwTPBvtykMSx!0t?7c/Z?NllkokY=TEC2DSonmOMUu0gxdCeh70/rA2NSsm7Ohjn7VM2BeP';
             const response = await fetch(`${baseUrl}/api/patrocinador/representante/${representanteId}`, {
-                method: 'GET',
                 headers: { 'Authorization': `Bearer ${jwtToken}`, 'X-API-KEY': apiKey }
             });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
 
-            setValue('representante.nome', data.nome, { shouldValidate: true });
-            setValue('representante.formacao', data.formacao, { shouldValidate: true });
-            setValue('representante.cargo', data.cargo, { shouldValidate: true });
-            setValue('representante.telefone', applyPhoneMask(data.telefone), { shouldValidate: true });
-            setValue('representante.email', data.email, { shouldValidate: true });
-            setValue('representante.registro', String(data.numeroRegistro), { shouldValidate: true });
+            setValue('representante.nome', data.nome);
+            setValue('representante.formacao', data.formacao);
+            setValue('representante.cargo', data.cargo);
+            setValue('representante.telefone', applyPhoneMask(data.telefone));
+            setValue('representante.email', data.email);
+            setValue('representante.registro', String(data.numeroRegistro));
             if (data.endereco) {
-                setValue('representante.endereco.cep', applyCepMask(data.endereco.cep), { shouldValidate: true });
-                setValue('representante.endereco.logradouro', data.endereco.logradouro, { shouldValidate: true });
-                setValue('representante.endereco.numero', String(data.endereco.numero), { shouldValidate: true });
-                setValue('representante.endereco.complemento', data.endereco.complemento, { shouldValidate: true });
-                setValue('representante.endereco.bairro', data.endereco.bairro, { shouldValidate: true });
-                setValue('representante.endereco.cidade', data.endereco.cidade, { shouldValidate: true });
-                setValue('representante.endereco.estado', data.endereco.uf, { shouldValidate: true });
+                setValue('representante.endereco.cep', applyCepMask(data.endereco.cep));
+                setValue('representante.endereco.logradouro', data.endereco.logradouro);
+                setValue('representante.endereco.numero', String(data.endereco.numero));
+                setValue('representante.endereco.complemento', data.endereco.complemento);
+                setValue('representante.endereco.bairro', data.endereco.bairro);
+                setValue('representante.endereco.cidade', data.endereco.cidade);
+                setValue('representante.endereco.estado', data.endereco.uf);
             }
         } catch (error) {
             console.error("Erro ao buscar detalhes do representante:", error);
@@ -256,49 +241,49 @@ const FormularioParticipantes = () => {
     };
     
     // --- Função para lidar com a mudança de monitor selecionado ---
-    const handleMonitorChange = async (monitorId: string, index: number) => {
-        if (!monitorId) {
-            const { nome, ...restOfDefault } = defaultPessoa;
-            Object.keys(restOfDefault).forEach(field => {
-                 setValue(`monitores.${index}.${field as keyof typeof restOfDefault}` as FieldPath<FormValues>, restOfDefault[field as keyof typeof restOfDefault], { shouldValidate: true });
-            });
-            setValue(`monitores.${index}.nome`, '', { shouldValidate: true });
-            return;
+    const handleMonitorChange = async (monitorId: string, index: number, shouldUpdateStorage = true) => {
+        if (shouldUpdateStorage) {
+            const data = getStoredData();
+            const monitorIds = data.monitorId || [];
+            monitorIds[index] = monitorId || null;
+            updateStoredData({ monitorId: monitorIds });
         }
-
-        const currentMonitorIds = JSON.parse(localStorage.getItem('monitorIds') || '{}');
-        currentMonitorIds[index] = monitorId;
-        localStorage.setItem('monitorIds', JSON.stringify(currentMonitorIds));
-
+        if (!monitorId) { 
+             const fieldsToReset = { ...defaultPessoa };
+             delete fieldsToReset.nome; // Keep the name field as is or clear it if you prefer
+             Object.keys(fieldsToReset).forEach(field => {
+                const path = `monitores.${index}.${field}` as FieldPath<FormValues>;
+                setValue(path, fieldsToReset[field]);
+             });
+             setValue(`monitores.${index}.nome`, '');
+             return;
+        }
+        
         const jwtToken = sessionStorage.getItem('token');
-        if (!jwtToken) {
-            console.error("Token JWT não encontrado para buscar detalhes do monitor.");
-            return;
-        }
+        if (!jwtToken) return console.error("Token JWT não encontrado.");
 
         try {
             const baseUrl = 'https://verita-brgchubha6ceathm.brazilsouth-01.azurewebsites.net';
             const apiKey = '2NtzCUDl8Ib2arnDRck0xK8taguGeFYuZqnUzpiZ9Wp-tUZ45--/i=tKxzwTPBvtykMSx!0t?7c/Z?NllkokY=TEC2DSonmOMUu0gxdCeh70/rA2NSsm7Ohjn7VM2BeP';
             const response = await fetch(`${baseUrl}/api/patrocinador/monitor/${monitorId}`, {
-                method: 'GET',
                 headers: { 'Authorization': `Bearer ${jwtToken}`, 'X-API-KEY': apiKey }
             });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
 
-            setValue(`monitores.${index}.nome`, data.nome, { shouldValidate: true });
-            setValue(`monitores.${index}.formacao`, data.formacao, { shouldValidate: true });
-            setValue(`monitores.${index}.telefone`, applyPhoneMask(data.telefone), { shouldValidate: true });
-            setValue(`monitores.${index}.email`, data.email, { shouldValidate: true });
-            setValue(`monitores.${index}.registro`, String(data.numeroRegistro), { shouldValidate: true });
+            setValue(`monitores.${index}.nome`, data.nome);
+            setValue(`monitores.${index}.formacao`, data.formacao);
+            setValue(`monitores.${index}.telefone`, applyPhoneMask(data.telefone));
+            setValue(`monitores.${index}.email`, data.email);
+            setValue(`monitores.${index}.registro`, String(data.numeroRegistro));
             if (data.endereco) {
-                setValue(`monitores.${index}.endereco.cep`, applyCepMask(data.endereco.cep), { shouldValidate: true });
-                setValue(`monitores.${index}.endereco.logradouro`, data.endereco.logradouro, { shouldValidate: true });
-                setValue(`monitores.${index}.endereco.numero`, String(data.endereco.numero), { shouldValidate: true });
-                setValue(`monitores.${index}.endereco.complemento`, data.endereco.complemento, { shouldValidate: true });
-                setValue(`monitores.${index}.endereco.bairro`, data.endereco.bairro, { shouldValidate: true });
-                setValue(`monitores.${index}.endereco.cidade`, data.endereco.cidade, { shouldValidate: true });
-                setValue(`monitores.${index}.endereco.estado`, data.endereco.uf, { shouldValidate: true });
+                setValue(`monitores.${index}.endereco.cep`, applyCepMask(data.endereco.cep));
+                setValue(`monitores.${index}.endereco.logradouro`, data.endereco.logradouro);
+                setValue(`monitores.${index}.endereco.numero`, String(data.endereco.numero));
+                setValue(`monitores.${index}.endereco.complemento`, data.endereco.complemento);
+                setValue(`monitores.${index}.endereco.bairro`, data.endereco.bairro);
+                setValue(`monitores.${index}.endereco.cidade`, data.endereco.cidade);
+                setValue(`monitores.${index}.endereco.estado`, data.endereco.uf);
             }
         } catch (error) {
             console.error(`Erro ao buscar detalhes do monitor no índice ${index}:`, error);
@@ -307,55 +292,55 @@ const FormularioParticipantes = () => {
 
     const handleRemoveMonitor = (index: number) => {
         removeMonitor(index);
-        const currentMonitorIds = JSON.parse(localStorage.getItem('monitorIds') || '{}');
-        delete currentMonitorIds[index];
-        localStorage.setItem('monitorIds', JSON.stringify(currentMonitorIds));
+        const data = getStoredData();
+        const monitorIds = data.monitorId || [];
+        monitorIds.splice(index, 1);
+        updateStoredData({ monitorId: monitorIds });
     };
 
     // --- Função para lidar com a mudança de membro da equipe selecionado ---
-    const handleEquipeChange = async (tecnicoId: string, index: number) => {
-        if (!tecnicoId) {
-            const { nome, ...restOfDefault } = defaultPessoa;
-            Object.keys(restOfDefault).forEach(field => {
-                 setValue(`equipe.${index}.${field as keyof typeof restOfDefault}` as FieldPath<FormValues>, restOfDefault[field as keyof typeof restOfDefault], { shouldValidate: true });
+    const handleEquipeChange = async (tecnicoId: string, index: number, shouldUpdateStorage = true) => {
+        if (shouldUpdateStorage) {
+             const data = getStoredData();
+             const tecnicoIds = data.tecnicoId || [];
+             tecnicoIds[index] = tecnicoId || null;
+             updateStoredData({ tecnicoId: tecnicoIds });
+        }
+       if (!tecnicoId) {
+            const fieldsToReset = { ...defaultPessoa };
+            delete fieldsToReset.nome;
+            Object.keys(fieldsToReset).forEach(field => {
+                const path = `equipe.${index}.${field}` as FieldPath<FormValues>;
+                setValue(path, fieldsToReset[field]);
             });
-            setValue(`equipe.${index}.nome`, '', { shouldValidate: true });
+            setValue(`equipe.${index}.nome`, '');
             return;
-        }
-
-        const currentEquipeIds = JSON.parse(localStorage.getItem('equipeIds') || '{}');
-        currentEquipeIds[index] = tecnicoId;
-        localStorage.setItem('equipeIds', JSON.stringify(currentEquipeIds));
-
+       }
         const jwtToken = sessionStorage.getItem('token');
-        if (!jwtToken) {
-            console.error("Token JWT não encontrado para buscar detalhes do membro da equipe.");
-            return;
-        }
+        if (!jwtToken) return console.error("Token JWT não encontrado.");
 
         try {
             const baseUrl = 'https://verita-brgchubha6ceathm.brazilsouth-01.azurewebsites.net';
             const apiKey = '2NtzCUDl8Ib2arnDRck0xK8taguGeFYuZqnUzpiZ9Wp-tUZ45--/i=tKxzwTPBvtykMSx!0t?7c/Z?NllkokY=TEC2DSonmOMUu0gxdCeh70/rA2NSsm7Ohjn7VM2BeP';
             const response = await fetch(`${baseUrl}/api/patrocinador/tecnico/${tecnicoId}`, {
-                method: 'GET',
                 headers: { 'Authorization': `Bearer ${jwtToken}`, 'X-API-KEY': apiKey }
             });
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
 
-            setValue(`equipe.${index}.nome`, data.nome, { shouldValidate: true });
-            setValue(`equipe.${index}.formacao`, data.formacao, { shouldValidate: true });
-            setValue(`equipe.${index}.telefone`, applyPhoneMask(data.telefone), { shouldValidate: true });
-            setValue(`equipe.${index}.email`, data.email, { shouldValidate: true });
-            setValue(`equipe.${index}.registro`, String(data.numeroRegistro), { shouldValidate: true });
+            setValue(`equipe.${index}.nome`, data.nome);
+            setValue(`equipe.${index}.formacao`, data.formacao);
+            setValue(`equipe.${index}.telefone`, applyPhoneMask(data.telefone));
+            setValue(`equipe.${index}.email`, data.email);
+            setValue(`equipe.${index}.registro`, String(data.numeroRegistro));
             if (data.endereco) {
-                setValue(`equipe.${index}.endereco.cep`, applyCepMask(data.endereco.cep), { shouldValidate: true });
-                setValue(`equipe.${index}.endereco.logradouro`, data.endereco.logradouro, { shouldValidate: true });
-                setValue(`equipe.${index}.endereco.numero`, String(data.endereco.numero), { shouldValidate: true });
-                setValue(`equipe.${index}.endereco.complemento`, data.endereco.complemento, { shouldValidate: true });
-                setValue(`equipe.${index}.endereco.bairro`, data.endereco.bairro, { shouldValidate: true });
-                setValue(`equipe.${index}.endereco.cidade`, data.endereco.cidade, { shouldValidate: true });
-                setValue(`equipe.${index}.endereco.estado`, data.endereco.uf, { shouldValidate: true });
+                setValue(`equipe.${index}.endereco.cep`, applyCepMask(data.endereco.cep));
+                setValue(`equipe.${index}.endereco.logradouro`, data.endereco.logradouro);
+                setValue(`equipe.${index}.endereco.numero`, String(data.endereco.numero));
+                setValue(`equipe.${index}.endereco.complemento`, data.endereco.complemento);
+                setValue(`equipe.${index}.endereco.bairro`, data.endereco.bairro);
+                setValue(`equipe.${index}.endereco.cidade`, data.endereco.cidade);
+                setValue(`equipe.${index}.endereco.estado`, data.endereco.uf);
             }
         } catch (error) {
             console.error(`Erro ao buscar detalhes do membro da equipe no índice ${index}:`, error);
@@ -364,37 +349,28 @@ const FormularioParticipantes = () => {
 
     const handleRemoveEquipe = (index: number) => {
         removeEquipe(index);
-        const currentEquipeIds = JSON.parse(localStorage.getItem('equipeIds') || '{}');
-        delete currentEquipeIds[index];
-        localStorage.setItem('equipeIds', JSON.stringify(currentEquipeIds));
+        const data = getStoredData();
+        const tecnicoIds = data.tecnicoId || [];
+        tecnicoIds.splice(index, 1);
+        updateStoredData({ tecnicoId: tecnicoIds });
     };
 
-
     // --- Função para buscar o CEP ---
-    // --- Busca dados de endereço na API ViaCEP quando o campo CEP perde o foco. ---
     const handleCepBlur = useCallback(async (e: React.FocusEvent<HTMLInputElement>, basePath: string) => {
         const cep = e.target.value.replace(/\D/g, "");
         if (cep.length !== 8) return;
-
         setCepLoading(basePath);
-
         try {
             const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
             const data = await response.json();
-
             if (data.erro) {
                 console.error("CEP não encontrado.");
-                setValue(`${basePath}.logradouro` as FieldPath<FormValues>, "");
-                setValue(`${basePath}.bairro` as FieldPath<FormValues>, "");
-                setValue(`${basePath}.cidade` as FieldPath<FormValues>, "");
-                setValue(`${basePath}.estado` as FieldPath<FormValues>, "");
             } else {
-                setValue(`${basePath}.logradouro` as FieldPath<FormValues>, data.logradouro, { shouldValidate: true });
-                setValue(`${basePath}.bairro` as FieldPath<FormValues>, data.bairro, { shouldValidate: true });
-                setValue(`${basePath}.cidade` as FieldPath<FormValues>, data.localidade, { shouldValidate: true });
-                setValue(`${basePath}.estado` as FieldPath<FormValues>, data.uf, { shouldValidate: true });
-                const numeroInput = document.querySelector(`input[name="${basePath}.numero"]`) as HTMLInputElement;
-                numeroInput?.focus();
+                setValue(`${basePath}.logradouro` as FieldPath<FormValues>, data.logradouro);
+                setValue(`${basePath}.bairro` as FieldPath<FormValues>, data.bairro);
+                setValue(`${basePath}.cidade` as FieldPath<FormValues>, data.localidade);
+                setValue(`${basePath}.estado` as FieldPath<FormValues>, data.uf);
+                document.querySelector<HTMLInputElement>(`input[name="${basePath}.numero"]`)?.focus();
             }
         } catch (error) {
             console.error("Falha ao buscar CEP:", error);
@@ -406,31 +382,20 @@ const FormularioParticipantes = () => {
     // --- Função de submissão do formulário ---
     const onSubmit = async (data: FormValues) => {
         setIsSubmitting(true);
-        
-        console.log("Dados do formulário validados e prontos para avançar:", data);
-        
-        // A lógica de envio para a API (PUT) foi removida conforme solicitado.
-        // Adicione aqui a lógica de navegação ou o que for necessário ao clicar em "Avançar".
-        
-        // Simula um tempo de espera para o feedback visual
-        await new Promise(resolve => setTimeout(resolve, 500)); 
-        
-        console.log("Avançando para a próxima etapa...");
-        // Exemplo: window.location.href = '/proxima-pagina'; // Se precisar de navegação
+        console.log("Dados do formulário validados:", data);
+        console.log("Dados que serão mantidos no localStorage:", getStoredData());
 
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        navigate("/protocolo/instituicao");
         setIsSubmitting(false);
     };
 
-    // --- Função para alternar a visibilidade de uma seção principal (Patrocinador, Representante). ---
-    const toggleSection = (section: keyof typeof expandedSections) => {
-        setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
-    };
-
-    // --- Função para alternar a visibilidade de um item em um array (Monitores, Equipe). ---
+    // --- Funções de UI ---
+    const toggleSection = (section: keyof typeof expandedSections) => setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
     const toggleArrayItem = (fieldName: 'monitores' | 'equipe', index: number) => {
-        const currentPath = `${fieldName}.${index}.expanded` as FieldPath<FormValues>;
-        const currentExpandedState = watch(currentPath);
-        setValue(currentPath, !currentExpandedState, { shouldValidate: false });
+        const path = `${fieldName}.${index}.expanded` as FieldPath<FormValues>;
+        setValue(path, !watch(path));
     };
 
     // --- Componente reutilizável para renderizar os campos de endereço. ---
@@ -447,8 +412,8 @@ const FormularioParticipantes = () => {
                          <Controller
                             name={`${basePath}.cep` as FieldPath<FormValues>}
                             control={control}
-                            render={({ field: { onChange, onBlur, value, ref } }) => (
-                                <Input ref={ref} type="text" maxLength={9} value={value || ''} onChange={(e) => onChange(applyCepMask(e.target.value))} onBlur={(e) => { onBlur(); handleCepBlur(e, basePath); }} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" />
+                            render={({ field }) => (
+                                <Input {...field} type="text" maxLength={9} onChange={(e) => field.onChange(applyCepMask(e.target.value))} onBlur={(e) => { field.onBlur(); handleCepBlur(e, basePath); }} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" />
                             )} />
                         {cepLoading === basePath && <LoadingSpinner />}
                     </div>
@@ -492,7 +457,7 @@ const FormularioParticipantes = () => {
     return (
         <div className="min-h-screen flex flex-col bg-gray-200">
             <header className="bg-white/30 backdrop-blur-lg shadow-sm w-full p-4 flex items-center justify-center relative border-b border-white/20">
-                <Button onClick={() => window.history.back()} className="absolute left-4 top-1/2 -translate-y-1/2 bg-gray hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded-lg inline-flex items-center text-sm" >
+                <Button onClick={() => navigate(-1)} className="absolute left-4 top-1/2 -translate-y-1/2 bg-gray hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded-lg inline-flex items-center text-sm" >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                     <span className="hidden sm:inline">Voltar</span>
                 </Button>
@@ -516,7 +481,7 @@ const FormularioParticipantes = () => {
                                     <div><Label><RequiredField>Identificação/Nome</RequiredField></Label><Input {...register("patrocinador.nome")} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /><p className="text-red-500 text-sm mt-1">{errors.patrocinador?.nome?.message}</p></div>
                                     <div>
                                         <Label><RequiredField>Telefone</RequiredField></Label>
-                                        <Controller name="patrocinador.telefone" control={control} render={({ field: { onChange, onBlur, value, ref } }) => ( <Input ref={ref} value={value || ''} onChange={(e) => onChange(applyPhoneMask(e.target.value))} onBlur={onBlur} type="tel" maxLength={15} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /> )} />
+                                        <Controller name="patrocinador.telefone" control={control} render={({ field }) => ( <Input {...field} value={field.value || ''} onChange={(e) => field.onChange(applyPhoneMask(e.target.value))} type="tel" maxLength={15} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /> )} />
                                         <p className="text-red-500 text-sm mt-1">{errors.patrocinador?.telefone?.message}</p>
                                     </div>
                                 </div>
@@ -539,17 +504,17 @@ const FormularioParticipantes = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <Label><RequiredField>Selecionar Representante</RequiredField></Label>
-                                        <select onChange={(e) => handleRepresentanteChange(e.target.value)} className="w-full px-3 py-3 h-12 text-base bg-white/50 focus:bg-white/80 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" >
+                                        <select value={getStoredData().representanteId || ''} onChange={(e) => handleRepresentanteChange(e.target.value)} className="w-full px-3 py-3 h-12 text-base bg-white/50 focus:bg-white/80 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" >
                                             <option value="">Selecione um representante</option>
                                             {representantes.map(rep => (<option key={rep.id} value={rep.id}>{rep.nome}</option>))}
                                         </select>
                                     </div>
                                     <div><Label><RequiredField>Nome (preenchido automaticamente)</RequiredField></Label><Input {...register("representante.nome")} readOnly className="py-3 h-12 text-base bg-gray-100" /><p className="text-red-500 text-sm mt-1">{errors.representante?.nome?.message}</p></div>
                                     <div><Label><RequiredField>Formação</RequiredField></Label><Input {...register("representante.formacao")} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /><p className="text-red-500 text-sm mt-1">{errors.representante?.formacao?.message}</p></div>
-                                    <div><Label>Cargo (Opcional)</Label><Input {...register("representante.cargo")} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /><p className="text-red-500 text-sm mt-1">{errors.representante?.cargo?.message}</p></div>
+                                    <div><Label>Cargo (Opcional)</Label><Input {...register("representante.cargo")} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /></div>
                                     <div>
                                         <Label><RequiredField>Telefone</RequiredField></Label>
-                                        <Controller name="representante.telefone" control={control} render={({ field: { onChange, onBlur, value, ref } }) => ( <Input ref={ref} value={value || ''} onChange={(e) => onChange(applyPhoneMask(e.target.value))} onBlur={onBlur} type="tel" maxLength={15} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /> )}/>
+                                        <Controller name="representante.telefone" control={control} render={({ field }) => ( <Input {...field} value={field.value || ''} onChange={(e) => field.onChange(applyPhoneMask(e.target.value))} type="tel" maxLength={15} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /> )}/>
                                         <p className="text-red-500 text-sm mt-1">{errors.representante?.telefone?.message}</p>
                                     </div>
                                     <div><Label><RequiredField>E-mail</RequiredField></Label><Input {...register("representante.email")} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /><p className="text-red-500 text-sm mt-1">{errors.representante?.email?.message}</p></div>
@@ -583,7 +548,7 @@ const FormularioParticipantes = () => {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                              <div>
                                                 <Label><RequiredField>Selecionar Monitor</RequiredField></Label>
-                                                <select onChange={(e) => handleMonitorChange(e.target.value, index)} className="w-full px-3 py-3 h-12 text-base bg-white/50 focus:bg-white/80 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" >
+                                                <select value={getStoredData().monitorId?.[index] || ''} onChange={(e) => handleMonitorChange(e.target.value, index)} className="w-full px-3 py-3 h-12 text-base bg-white/50 focus:bg-white/80 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" >
                                                     <option value="">Selecione um monitor</option>
                                                     {monitoresList.map(mon => (<option key={mon.id} value={mon.id}>{mon.nome}</option>))}
                                                 </select>
@@ -593,7 +558,7 @@ const FormularioParticipantes = () => {
                                             <div><Label><RequiredField>Formação</RequiredField></Label><Input {...register(`monitores.${index}.formacao`)} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /><p className="text-red-500 text-sm mt-1">{errors.monitores?.[index]?.formacao?.message}</p></div>
                                             <div>
                                                 <Label><RequiredField>Telefone</RequiredField></Label>
-                                                <Controller name={`monitores.${index}.telefone`} control={control} render={({ field: { onChange, onBlur, value, ref } }) => ( <Input ref={ref} value={value || ''} onChange={(e) => onChange(applyPhoneMask(e.target.value))} onBlur={onBlur} type="tel" maxLength={15} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /> )}/>
+                                                <Controller name={`monitores.${index}.telefone`} control={control} render={({ field }) => ( <Input {...field} value={field.value || ''} onChange={(e) => field.onChange(applyPhoneMask(e.target.value))} type="tel" maxLength={15} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /> )}/>
                                                 <p className="text-red-500 text-sm mt-1">{errors.monitores?.[index]?.telefone?.message}</p>
                                             </div>
                                             <div><Label><RequiredField>E-mail</RequiredField></Label><Input {...register(`monitores.${index}.email`)} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /><p className="text-red-500 text-sm mt-1">{errors.monitores?.[index]?.email?.message}</p></div>
@@ -630,7 +595,7 @@ const FormularioParticipantes = () => {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <Label><RequiredField>Selecionar Membro da Equipe</RequiredField></Label>
-                                                <select onChange={(e) => handleEquipeChange(e.target.value, index)} className="w-full px-3 py-3 h-12 text-base bg-white/50 focus:bg-white/80 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" >
+                                                <select value={getStoredData().tecnicoId?.[index] || ''} onChange={(e) => handleEquipeChange(e.target.value, index)} className="w-full px-3 py-3 h-12 text-base bg-white/50 focus:bg-white/80 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" >
                                                     <option value="">Selecione um membro</option>
                                                     {equipeList.map(tec => (<option key={tec.id} value={tec.id}>{tec.nome}</option>))}
                                                 </select>
@@ -640,7 +605,7 @@ const FormularioParticipantes = () => {
                                             <div><Label><RequiredField>Formação</RequiredField></Label><Input {...register(`equipe.${index}.formacao`)} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /><p className="text-red-500 text-sm mt-1">{errors.equipe?.[index]?.formacao?.message}</p></div>
                                             <div>
                                                 <Label><RequiredField>Telefone</RequiredField></Label>
-                                                <Controller name={`equipe.${index}.telefone`} control={control} render={({ field: { onChange, onBlur, value, ref } }) => ( <Input ref={ref} value={value || ''} onChange={(e) => onChange(applyPhoneMask(e.target.value))} onBlur={onBlur} type="tel" maxLength={15} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /> )}/>
+                                                <Controller name={`equipe.${index}.telefone`} control={control} render={({ field }) => ( <Input {...field} value={field.value || ''} onChange={(e) => field.onChange(applyPhoneMask(e.target.value))} type="tel" maxLength={15} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /> )}/>
                                                 <p className="text-red-500 text-sm mt-1">{errors.equipe?.[index]?.telefone?.message}</p>
                                             </div>
                                             <div><Label><RequiredField>E-mail</RequiredField></Label><Input {...register(`equipe.${index}.email`)} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" /><p className="text-red-500 text-sm mt-1">{errors.equipe?.[index]?.email?.message}</p></div>
