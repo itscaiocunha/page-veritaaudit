@@ -63,7 +63,7 @@ const App = () => (
           <Route path="/protocolo/criar"  element={<Protocolo />}/>
           <Route path="/protocolo/patrocinador"  element={<DataPatrocinador />}/>
           <Route path="/protocolo/instituicao"  element={<DataInstituicao />}/>
-          <Route path="/local-protocol"  element={<LocalProtocol />}/>
+          <Route path="/protocolo/local"  element={<LocalProtocol />}/>
           <Route path="/introducao" element={<FormularioIntroducao/>}/>
           <Route path="/objetivo" element={<FormularioObservacao/>}/>
           <Route path="/justificativa" element={<FormularioJustificativa/>}/>
