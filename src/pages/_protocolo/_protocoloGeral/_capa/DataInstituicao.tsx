@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Trash2, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+// --- Helpers, Componentes e Schemas Auxiliares ---
+
 // --- Expressões regulares para validação de telefone (8 ou 9 dígitos) e CEP. ---
 const phoneRegExp = /^\(\d{2}\) \d{4,5}-\d{4}$/;
 const cepRegExp = /^\d{5}-\d{3}$/;
@@ -239,7 +241,6 @@ const FormularioInstituicao = () => {
                     instituicaoId = capaData?.protocolo?.instituicaoId;
                     if (instituicaoId) {
                         storedData.instituicaoId = instituicaoId;
-                        localStorage.setItem('dataInstituicao', JSON.stringify(storedData));
                     }
                 }
             }
@@ -314,10 +315,13 @@ const FormularioInstituicao = () => {
     // --- Função de submissão do formulário. ---
     const onSubmit = async (data: FormValues) => {
         setIsSubmitting(true);
-        console.log("Dados do formulário validados, navegando para a próxima etapa:", data);
+        console.log("Dados da Instituição de Pesquisa:", data);
         
-        // A lógica de salvar os dados completos do formulário no localStorage foi removida.
-        // Apenas os IDs são mantidos, salvos através das funções 'handle...Change'.
+        try {
+            const storedData = JSON.parse(localStorage.getItem('dataInstituicao') || '{}');
+        } catch (error) {
+            console.error("Erro ao salvar os dados no localStorage:", error);
+        }
         
         await new Promise(resolve => setTimeout(resolve, 500));
         setIsSubmitting(false);
@@ -532,7 +536,7 @@ const FormularioInstituicao = () => {
                     {/* --- Botões de Ação do Formulário --- */}
                     <div className="flex justify-end items-center gap-4 pt-6">
                         <Button type="submit" className="bg-[#90EE90] hover:bg-[#7CCD7C] text-white font-bold px-8 py-3 text-lg h-auto rounded-md" disabled={isSubmitting}>
-                            {isSubmitting ? (<div className="flex items-center gap-2"><LoadingSpinner /> A Salvar...</div>) : ('Salvar e Avançar')}
+                            {isSubmitting ? (<div className="flex items-center gap-2"><LoadingSpinner /> A Salvar...</div>) : ('Avançar')}
                         </Button>
                     </div>
                 </form>

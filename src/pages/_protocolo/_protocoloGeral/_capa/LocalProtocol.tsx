@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useForm, useFieldArray, Controller, FieldPath } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2, Plus, ChevronDown, ChevronUp } from "lucide-react";
 
 // --- Helpers e Componentes Auxiliares ---
-const phoneRegExp = /^\(\d{2}\) \d{5}-\d{4}$/;
+const phoneRegExp = /^\(\d{2}\) \d{4,5}-\d{4}$/;
 const cepRegExp = /^\d{5}-\d{3}$/;
 
 const applyPhoneMask = (value: string) => {
@@ -70,9 +70,6 @@ const etapaEstatisticaSchema = yup.object().shape({
     endereco: addressSchema,
 });
 
-type FormValues = yup.InferType<ReturnType<typeof createValidationSchema>>;
-type ArrayName = 'etapasClinicas' | 'etapasLaboratoriais' | 'etapasEstatisticas';
-
 const createValidationSchema = (activeSections: { clinica: boolean; laboratorial: boolean; estatistica: boolean; }) => {
     return yup.object().shape({
         etapasClinicas: activeSections.clinica
@@ -91,72 +88,236 @@ const createValidationSchema = (activeSections: { clinica: boolean; laboratorial
     );
 };
 
+type FormValues = yup.InferType<ReturnType<typeof createValidationSchema>>;
+type ArrayName = 'etapasClinicas' | 'etapasLaboratoriais' | 'etapasEstatisticas';
+
+// --- Funções de Transformação de Dados para a API ---
+const formatIdArray = (idArray: (string | number)[] | undefined): { id: number }[] => {
+    if (!idArray || !Array.isArray(idArray)) return [];
+    return idArray.map(id => ({ id: typeof id === 'string' ? parseInt(id, 10) : id }));
+};
+
+const transformAddress = (endereco: any) => ({
+    cep: (endereco.cep || '').replace(/\D/g, ''),
+    rua: endereco.logradouro,
+    bairro: endereco.bairro,
+    numeral: parseInt(endereco.numero, 10) || 0,
+    complemento: endereco.complemento,
+    uf: endereco.uf,
+    cidade: endereco.cidade
+});
+
+const transformClinicaData = (etapas: any[] | undefined) => {
+    if (!etapas) return [];
+    return etapas.map(etapa => ({
+        nome: etapa.identificacao,
+        telefone: (etapa.telefone || '').replace(/\D/g, ''),
+        email: etapa.email,
+        numeroRegistro: etapa.registroCiaep,
+        responsavel: etapa.responsavel,
+        endereco: transformAddress(etapa.endereco)
+    }));
+};
+
+const transformLaboratorialData = (etapas: any[] | undefined) => {
+    if (!etapas) return [];
+    return etapas.map(etapa => ({
+        nome: etapa.identificacao,
+        telefone: (etapa.telefone || '').replace(/\D/g, ''),
+        email: etapa.email,
+        numeroRegistro: etapa.credenciamento,
+        endereco: transformAddress(etapa.endereco)
+    }));
+};
+
+const transformEstatisticaData = (etapas: any[] | undefined) => {
+    if (!etapas) return [];
+    return etapas.map(etapa => ({
+        nome: etapa.identificacao,
+        telefone: (etapa.telefone || '').replace(/\D/g, ''),
+        email: etapa.email,
+        numeroRegistro: "N/A", // Campo não existe no formulário, valor padrão
+        endereco: transformAddress(etapa.endereco)
+    }));
+};
+
 
 // --- COMPONENTE PRINCIPAL: LocalProtocol ---
 const LocalProtocol = () => {
     const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [apiError, setApiError] = useState<string | null>(null);
     const [loadingCep, setLoadingCep] = useState<string | null>(null);
     const [activeSections, setActiveSections] = useState({
-        clinica: true,
-        laboratorial: true,
-        estatistica: true,
+        clinica: false,
+        laboratorial: false,
+        estatistica: false,
     });
 
     const validationSchema = useMemo(() => createValidationSchema(activeSections), [activeSections]);
     
     const defaultAddress = { cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" };
 
-    const { register, control, handleSubmit, formState: { errors }, setValue, watch, setFocus, trigger } = useForm<FormValues>({
+    const { register, control, handleSubmit, formState: { errors }, setValue, watch, setFocus, trigger, reset } = useForm<FormValues>({
         resolver: yupResolver(validationSchema),
         defaultValues: {
-            etapasClinicas: [{ identificacao: "", telefone: "", email: "", geolocalizacao: "", registroCiaep: "", responsavel: "", expanded: true, endereco: defaultAddress }],
+            etapasClinicas: [],
             etapasLaboratoriais: [],
             etapasEstatisticas: [],
         }
     });
 
+    const watchedValues = watch();
+
     const { fields: clinicaFields, append: appendClinica, remove: removeClinica } = useFieldArray({ control, name: "etapasClinicas" });
     const { fields: laboratorialFields, append: appendLaboratorial, remove: removeLaboratorial } = useFieldArray({ control, name: "etapasLaboratoriais" });
     const { fields: estatisticaFields, append: appendEstatistica, remove: removeEstatistica } = useFieldArray({ control, name: "etapasEstatisticas" });
+
+    // --- EFEITO PARA CARREGAR DADOS DO LOCALSTORAGE ---
+    useEffect(() => {
+        try {
+            const savedDataString = localStorage.getItem('dataLocal');
+            if (savedDataString) {
+                const savedData = JSON.parse(savedDataString)[0];
+                const newActiveSections = {
+                    clinica: !!savedData.etapasClinicas?.length,
+                    laboratorial: !!savedData.etapasLaboratoriais?.length,
+                    estatistica: !!savedData.etapasEstatisticas?.length,
+                };
+                setActiveSections(newActiveSections);
+                reset(savedData);
+            } else {
+                // Estado inicial se não houver nada salvo
+                setActiveSections({ clinica: true, laboratorial: false, estatistica: false });
+                setValue("etapasClinicas", [{ identificacao: "", telefone: "", email: "", geolocalizacao: "", registroCiaep: "", responsavel: "", expanded: true, endereco: defaultAddress }]);
+            }
+        } catch (error) {
+            console.error("Erro ao carregar dados do localStorage:", error);
+        }
+    }, [reset, setValue]);
+
+    // --- EFEITO PARA SALVAR DADOS EM TEMPO REAL ---
+    useEffect(() => {
+        const debounceSave = setTimeout(() => {
+            const hasActiveSections = activeSections.clinica || activeSections.laboratorial || activeSections.estatistica;
+            if (hasActiveSections) {
+                const dataToSave = {
+                    etapasClinicas: activeSections.clinica ? watchedValues.etapasClinicas : [],
+                    etapasLaboratoriais: activeSections.laboratorial ? watchedValues.etapasLaboratoriais : [],
+                    etapasEstatisticas: activeSections.estatistica ? watchedValues.etapasEstatisticas : [],
+                };
+                localStorage.setItem('dataLocal', JSON.stringify([dataToSave]));
+            } else {
+                localStorage.removeItem('dataLocal');
+            }
+        }, 500);
+
+        return () => clearTimeout(debounceSave);
+    }, [watchedValues, activeSections]);
+
 
     const handleSectionToggle = (section: keyof typeof activeSections) => {
         const newActiveSections = { ...activeSections, [section]: !activeSections[section] };
         setActiveSections(newActiveSections);
 
+        const sectionName = `etapas${section.charAt(0).toUpperCase() + section.slice(1)}` as ArrayName;
+
         if (!newActiveSections[section]) {
-            const sectionName = `etapas${section.charAt(0).toUpperCase() + section.slice(1)}` as ArrayName;
             setValue(sectionName, []);
         } else {
-             const sectionName = `etapas${section.charAt(0).toUpperCase() + section.slice(1)}` as ArrayName;
-             const defaultValues: any = { identificacao: "", telefone: "", email: "", expanded: true, endereco: defaultAddress };
-             if(section === 'clinica') Object.assign(defaultValues, { geolocalizacao: "", registroCiaep: "", responsavel: ""});
-             if(section === 'laboratorial') Object.assign(defaultValues, { credenciamento: ""});
-             setValue(sectionName, [defaultValues]);
+            const defaultValues: any = { identificacao: "", telefone: "", email: "", expanded: true, endereco: defaultAddress };
+            if (section === 'clinica') Object.assign(defaultValues, { geolocalizacao: "", registroCiaep: "", responsavel: ""});
+            if (section === 'laboratorial') Object.assign(defaultValues, { credenciamento: ""});
+            setValue(sectionName, [defaultValues]);
         }
         trigger();
     };
 
 
-    const onSubmit = async (data: FormValues) => {
+    const onSubmit = async (formData: FormValues) => {
         setIsSubmitting(true);
-        console.log("Dados do Local de Execução:", data);
+        setApiError(null);
 
         try {
-            const dataToSave = {
-                etapasClinicas: activeSections.clinica ? data.etapasClinicas : [],
-                etapasLaboratoriais: activeSections.laboratorial ? data.etapasLaboratoriais : [],
-                etapasEstatisticas: activeSections.estatistica ? data.etapasEstatisticas : [],
+            // 1. Get data from localStorage
+            const capaDataString = localStorage.getItem('capaProtocolData');
+            const patrocinadorDataString = localStorage.getItem('dataPatrocinador');
+            const instituicaoDataString = localStorage.getItem('dataInstituicao');
+
+            if (!capaDataString || !patrocinadorDataString || !instituicaoDataString) {
+                throw new Error("Dados de etapas anteriores não encontrados. Por favor, preencha as etapas de Capa, Patrocinador e Instituição.");
+            }
+            
+            const rawCapaData = JSON.parse(capaDataString);
+            const capaData = Array.isArray(rawCapaData) ? rawCapaData[0] : rawCapaData;
+
+            const rawPatrocinadorData = JSON.parse(patrocinadorDataString);
+            const patrocinadorData = Array.isArray(rawPatrocinadorData) ? rawPatrocinadorData[0] : rawPatrocinadorData;
+            
+            const instituicaoData = JSON.parse(instituicaoDataString);
+            
+            // 2. Construct the API payload
+            const payload = {
+                titulo: capaData?.protocolo?.titulo,
+                tipoEstudo: capaData?.protocolo?.tipoEstudo,
+                classeTerapeutica: capaData?.protocolo?.tipoProduto,
+                especieAnimal: capaData?.protocolo?.especie,
+                responsavel: capaData?.protocolo?.responsavel,
+                patrocinadorId: parseInt(patrocinadorData?.patrocinadorId, 10),
+                representanteId: parseInt(patrocinadorData?.representanteId, 10),
+                monitores: formatIdArray(patrocinadorData?.monitoresId),
+                equipeTecnicaPatrocinador: formatIdArray(patrocinadorData?.tecnicosId),
+                instituicaoId: instituicaoData?.instituicaoId,
+                investigadorId: parseInt(instituicaoData?.investigadorId, 10),
+                equipeTecnicaInstituicao: formatIdArray(instituicaoData?.equipeIds),
+                etapaClinica: activeSections.clinica ? transformClinicaData(formData.etapasClinicas) : [],
+                etapaLaboratorial: activeSections.laboratorial ? transformLaboratorialData(formData.etapasLaboratoriais) : [],
+                etapaEstatistica: activeSections.estatistica ? transformEstatisticaData(formData.etapasEstatisticas) : [],
             };
-            localStorage.setItem('dadosLocalProtocol', JSON.stringify([dataToSave]));
-            console.log("Dados salvos no localStorage com a chave 'dadosLocalProtocol'.");
-        } catch (error) {
-            console.error("Erro ao salvar os dados no localStorage:", error);
+
+            console.log("JSON Body Enviado:", JSON.stringify(payload, null, 2));
+
+            // 3. Make the API call
+            const jwtToken = sessionStorage.getItem('token');
+            if (!jwtToken) {
+                throw new Error("Token de autenticação não encontrado. Por favor, faça login novamente.");
+            }
+
+            const baseUrl = 'https://verita-brgchubha6ceathm.brazilsouth-01.azurewebsites.net';
+            const apiKey = '2NtzCUDl8Ib2arnDRck0xK8taguGeFYuZqnUzpiZ9Wp-tUZ45--/i=tKxzwTPBvtykMSx!0t?7c/Z?NllkokY=TEC2DSonmOMUu0gxdCeh70/rA2NSsm7Ohjn7VM2BeP';
+
+            const response = await fetch(`${baseUrl}/api/protocolo`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${jwtToken}`,
+                    'X-API-KEY': apiKey,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.ok) { // Verifica se o status é 2xx (200, 201, etc.)
+                console.log("Protocolo criado com sucesso:", await response.json());
+                
+                // Limpa o localStorage após o sucesso
+                localStorage.removeItem('capaProtocolData');
+                localStorage.removeItem('dataPatrocinador');
+                localStorage.removeItem('dataInstituicao');
+                localStorage.removeItem('dataLocal');
+                console.log("LocalStorage limpo com sucesso.");
+
+                navigate("/introducao");
+            } else {
+                const errorData = await response.json();
+                throw new Error(`Erro na API: ${response.statusText} - ${JSON.stringify(errorData.errors || errorData)}`);
+            }
+
+        } catch (error: any) {
+            console.error("Erro ao submeter o protocolo:", error);
+            setApiError(error.message || "Ocorreu um erro desconhecido.");
+        } finally {
+            setIsSubmitting(false);
         }
-        
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setIsSubmitting(false);
-        navigate("/introducao");
     };
 
     const handleCepLookup = async (cep: string, arrayName: ArrayName, index: number) => {
@@ -259,13 +420,21 @@ const LocalProtocol = () => {
     
     return (
         <div className="min-h-screen bg-gray-100 font-sans">
-            <header className="bg-white shadow-sm">
-                <div className="max-w-6xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-                    <h1 className="text-2xl font-bold text-gray-800">VERITA AUDIT</h1>
-                </div>
+            {/* --- Cabeçalho da Página --- */}
+            <header className="bg-white/30 backdrop-blur-lg shadow-sm w-full p-4 flex items-center justify-center relative border-b border-white/20">
+                <Button
+                onClick={() => navigate(-1)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-gray hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded-lg inline-flex items-center text-sm"
+                >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                <span className="hidden sm:inline">Voltar</span>
+                </Button>
+                <h1 className="text-xl sm:text-2xl font-bold text-center text-gray-800">Verita Audit</h1>
             </header>
             <main className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-                <div className="bg-white rounded-xl shadow-lg p-8 md:p-10">
+                <div className="rounded-xl shadow-lg p-8 md:p-10">
                     <h2 className="text-3xl font-bold text-center mb-2 text-gray-900">Local da Execução do Protocolo</h2>
                     <p className="text-center text-gray-500 mb-10">Selecione e preencha as seções necessárias para o estudo.</p>
                     
@@ -388,17 +557,18 @@ const LocalProtocol = () => {
                             )}
                         </section>
                         
+                        {apiError && <p className="text-red-500 text-center font-bold text-lg mt-4">{apiError}</p>}
                         {errors.root?.message && <p className="text-red-500 text-center font-bold text-lg mt-4">{errors.root.message}</p>}
 
                         {/* --- Botão de Submissão --- */}
                         <div className="flex justify-end pt-6">
                           <Button
-                              type="submit"
-                              className="bg-green-600 hover:bg-green-700 text-white font-bold px-10 py-3 text-lg h-auto rounded-lg shadow-md hover:shadow-lg transition-all"
-                              disabled={isSubmitting}
-                          >
-                              {isSubmitting ? (<div className="flex items-center gap-2"><LoadingSpinner /> Salvando...</div>) : ('Salvar e Avançar')}
-                          </Button>
+                                type="submit"
+                                className="bg-[#90EE90] hover:bg-[#7CCD7C] text-white font-bold px-8 py-3 text-lg h-auto rounded-md"
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? (<div className="flex items-center gap-2"><LoadingSpinner /> A Salvar...</div>) : ('Salvar e Avançar')}
+                            </Button>
                         </div>
                     </form>
                 </div>

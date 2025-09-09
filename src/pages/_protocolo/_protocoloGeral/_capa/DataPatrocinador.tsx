@@ -382,8 +382,6 @@ const FormularioParticipantes = () => {
     // --- Função de submissão do formulário ---
     const onSubmit = async (data: FormValues) => {
         setIsSubmitting(true);
-        console.log("Dados do formulário validados:", data);
-        console.log("Dados que serão mantidos no localStorage:", getStoredData());
 
         await new Promise(resolve => setTimeout(resolve, 500));
         
