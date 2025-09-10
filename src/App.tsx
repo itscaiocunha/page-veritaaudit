@@ -35,6 +35,7 @@ import FormularioBibliografia from "./pages/_protocolo/_protocoloGeral/_conteudo
 import EquipeExecutora from "./pages/_formulario/_protocoloEquipe/DataEquipeExecutora";
 import TriagemBovino from "./pages/_formulario/_triagem/DataBovino";
 import InventarioPVI from "./pages/_formulario/_inventarioPVI/dataInventarioPVI";
+import PesagemAnimais from "./pages/_formulario/Pesagem";
 
 const queryClient = new QueryClient();
 
@@ -84,6 +85,7 @@ const App = () => (
           <Route path="/formulario/equipe-executora" element={<EquipeExecutora/>}/>
           <Route path="/formulario/triagem/bovino" element={<TriagemBovino/>}/>
           <Route path="/formulario/inventario/produto-veterinario" element={<InventarioPVI/>}/>
+          <Route path="/formulario/pesagem" element={<PesagemAnimais/>}/>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
