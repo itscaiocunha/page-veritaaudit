@@ -32,8 +32,9 @@ import VisualizacaoCompletaPDF from "./pages/_protocolo/_protocoloGeral/Protocol
 import FormularioEutanasia from "./pages/_protocolo/_protocoloGeral/_conteudo/FormularioEutanasia";
 import FormularioAnexos from "./pages/_protocolo/_protocoloGeral/_conteudo/FormularioAnexos";
 import FormularioBibliografia from "./pages/_protocolo/_protocoloGeral/_conteudo/FormularioBibliografia";
-import EquipeExecutora from "./pages/_protocolo/_protocoloEquipe/DataEquipeExecutora";
-import TriagemBovino from "./pages/_protocolo/_triagem/DataBovino";
+import EquipeExecutora from "./pages/_formulario/_protocoloEquipe/DataEquipeExecutora";
+import TriagemBovino from "./pages/_formulario/_triagem/DataBovino";
+import InventarioPVI from "./pages/_formulario/_inventarioPVI/dataInventarioPVI";
 
 const queryClient = new QueryClient();
 
@@ -79,11 +80,10 @@ const App = () => (
           <Route path="/bibliografia" element={<FormularioBibliografia/>}/>
           <Route path="/protocolo-final" element={<VisualizacaoCompletaPDF/>}/>
 
-          // Protocolos Extras
-          <Route path="/protocolo/equipe-executora" element={<EquipeExecutora/>}/>
-
-          // Triagens
-          <Route path="/protocolo/triagem/bovino" element={<TriagemBovino/>}/>
+          // Formulários
+          <Route path="/formulario/equipe-executora" element={<EquipeExecutora/>}/>
+          <Route path="/formulario/triagem/bovino" element={<TriagemBovino/>}/>
+          <Route path="/formulario/inventario/produto-veterinario" element={<InventarioPVI/>}/>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
