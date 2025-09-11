@@ -34,7 +34,7 @@ import FormularioAnexos from "./pages/_protocolo/_protocoloGeral/_conteudo/Formu
 import FormularioBibliografia from "./pages/_protocolo/_protocoloGeral/_conteudo/FormularioBibliografia";
 import EquipeExecutora from "./pages/_formulario/_protocoloEquipe/DataEquipeExecutora";
 import TriagemBovino from "./pages/_formulario/_triagem/DataBovino";
-import InventarioPVI from "./pages/_formulario/_inventarioPVI/dataInventarioPVI";
+import InventarioPVI from "./pages/_formulario/_inventarioPVI/DataInventarioPVI";
 import PesagemAnimais from "./pages/_formulario/Pesagem";
 
 const queryClient = new QueryClient();

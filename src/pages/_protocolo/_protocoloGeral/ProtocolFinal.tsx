@@ -31,7 +31,7 @@ const PageWrapper = ({ children, innerRef, codigoEstudo }: { children: React.Rea
             {children}
         </main>
         <footer className="text-xs mt-auto pt-8 text-justify">
-            <p>Este documento contém informações confidenciais e sigilosas. Qualquer reprodução, compartilhamento ou uso impróprio deste conteúdo fora do ambiente das empresas envolvidas, sem prévio consentimento por escrito, é expressamente proibido.</p>
+            <p>Este documento contém informações confidenciais do Patrocinador. Seu uso é restrito às atividades do estudo clínico veterinário, sendo proibida a reprodução, divulgação ou utilização para outros fins, salvo quando exigido por lei. Qualquer suspeita ou quebra de confidencialidade deve ser comunicada imediatamente ao Patrocinador</p>
         </footer>
     </div>
 );
@@ -63,7 +63,7 @@ const Capa = ({ data }: { data: any }) => (
 const PaginaAssinaturas = ({ dadosPatrocinador, dadosInstituicao, codigoEstudo }: { dadosPatrocinador: any, dadosInstituicao: any, codigoEstudo?: string }) => (
     <PageWrapper codigoEstudo={codigoEstudo}>
         <h2 className="text-xl font-bold text-center mb-8">PÁGINA DE ASSINATURAS</h2>
-        <p className="text-sm mb-16">Li e concordo que a pesquisa clínica será conduzida conforme estipulado neste protocolo.</p>
+        <p className="text-sm mb-16">Li este protocolo e concordo que ele seja conduzido em conformidade com o estipulado.</p>
         <div className="space-y-20">
             <div className="flex flex-col items-center">
                 <div className="border-b border-black w-3/4"></div>
