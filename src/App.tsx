@@ -36,6 +36,10 @@ import EquipeExecutora from "./pages/_formulario/_protocoloEquipe/DataEquipeExec
 import TriagemBovino from "./pages/_formulario/_triagem/DataBovino";
 import InventarioPVI from "./pages/_formulario/_inventarioPVI/DataInventarioPVI";
 import PesagemAnimais from "./pages/_formulario/Pesagem";
+import Randomizacao from "./pages/_formulario/Randomizacao";
+import DataSelecaoAnimais from "./pages/_formulario/SelecaoAnimais";
+import DataIdentificacaoAnimais from "./pages/_formulario/IdentificacaoAnimais";
+import DataExameFisicoLaboratorial from "./pages/_formulario/ExameFisicoLaboratorial";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +90,10 @@ const App = () => (
           <Route path="/formulario/triagem/bovino" element={<TriagemBovino/>}/>
           <Route path="/formulario/inventario/produto-veterinario" element={<InventarioPVI/>}/>
           <Route path="/formulario/pesagem" element={<PesagemAnimais/>}/>
+          <Route path="/formulario/randomizacao" element={<Randomizacao/>}/>
+          <Route path="/formulario/selecao-animais" element={<DataSelecaoAnimais/>}/>
+          <Route path="/formulario/identificacao-animais" element={<DataIdentificacaoAnimais/>}/>
+          <Route path="/formulario/exames/clinico-laboratorial" element={<DataExameFisicoLaboratorial/>}/>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
