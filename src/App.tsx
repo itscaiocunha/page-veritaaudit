@@ -63,7 +63,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
 
           // Home
-          <Route path="/dashboard" element={<Dashboard formData={{ name: "Caio" }} />} />
+          <Route path="/dashboard" element={<Dashboard formData={{ name: "Admin" }} />} />
 
           // Protocolo Geral
           <Route path="/protocolo/criar"  element={<Protocolo />}/>
