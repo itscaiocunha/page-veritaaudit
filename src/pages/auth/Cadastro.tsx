@@ -206,7 +206,7 @@ const Cadastro = () => {
           cnpj: data.cnpj.replace(/\D/g, ''),
           razaoSocial: data.razaoSocial || "Não Informado",
           tipoEmpresa: data.tipoEmpresa,
-          relacaoEmpresa: data.relacaoEmpresa
+          relacaoEmpresa: data.relacaoEmpresa || null,
         }
       };
       const jsonBlob = new Blob([JSON.stringify(dadosParaEnviar)], { type: 'application/json' });

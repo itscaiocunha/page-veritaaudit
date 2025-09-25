@@ -40,6 +40,12 @@ import Randomizacao from "./pages/_formulario/Randomizacao";
 import DataSelecaoAnimais from "./pages/_formulario/SelecaoAnimais";
 import DataIdentificacaoAnimais from "./pages/_formulario/IdentificacaoAnimais";
 import DataExameFisicoLaboratorial from "./pages/_formulario/ExameFisicoLaboratorial";
+import Tratamento from "./pages/_formulario/Tratamento";
+import DataObservacaoSaude from "./pages/_formulario/ObservacaoGerais";
+import ColheitaSangue from "./pages/_formulario/ColheitaSangue";
+import NotasAoEstudo from "./pages/_formulario/NotasEstudo";
+import ColheitaAmostraLeite from "./pages/_formulario/ColheitaLeite";
+import FinalizacaoParticipacao from "./pages/_formulario/FinalizacaoPesquisa";
 
 const queryClient = new QueryClient();
 
@@ -70,19 +76,20 @@ const App = () => (
           <Route path="/protocolo/patrocinador"  element={<DataPatrocinador />}/>
           <Route path="/protocolo/instituicao"  element={<DataInstituicao />}/>
           <Route path="/protocolo/local"  element={<LocalProtocol />}/>
-          <Route path="/introducao" element={<FormularioIntroducao/>}/>
-          <Route path="/objetivo" element={<FormularioObservacao/>}/>
-          <Route path="/justificativa" element={<FormularioJustificativa/>}/>
-          <Route path="/requisitos" element={<FormularioRequisitos/>}/>
-          <Route path="/material-metodo" element={<FormularioMetodo/>}/>
-          <Route path="/estatistica" element={<FormularioEstatistica/>}/>
-          <Route path="/saude" element={<FormularioSaude/>}/>
-          <Route path="/evento" element={<FormularioEventoAdverso/>}/>
-          <Route path="/medicacao-concomitante" element={<FormularioConcomitante/>}/>
-          <Route path="/eutanasia" element={<FormularioEutanasia/>}/>
-          <Route path="/cronograma" element={<FormularioCronograma/>}/>
-          <Route path="/anexos" element={<FormularioAnexos/>}/>
-          <Route path="/bibliografia" element={<FormularioBibliografia/>}/>
+          
+          <Route path="/introducao" element={<FormularioIntroducao/>}/> //2
+          <Route path="/objetivo" element={<FormularioObservacao/>}/> //3
+          <Route path="/justificativa" element={<FormularioJustificativa/>}/> //4
+          <Route path="/requisitos" element={<FormularioRequisitos/>}/> //5
+          <Route path="/material-metodo" element={<FormularioMetodo/>}/> //6
+          <Route path="/estatistica" element={<FormularioEstatistica/>}/> //7
+          <Route path="/saude" element={<FormularioSaude/>}/> //8
+          <Route path="/evento" element={<FormularioEventoAdverso/>}/> //9
+          <Route path="/medicacao-concomitante" element={<FormularioConcomitante/>}/> //10
+          <Route path="/eutanasia" element={<FormularioEutanasia/>}/> //11
+          <Route path="/cronograma" element={<FormularioCronograma/>}/> //12
+          <Route path="/anexos" element={<FormularioAnexos/>}/> //13
+          <Route path="/bibliografia" element={<FormularioBibliografia/>}/> //14
           <Route path="/protocolo-final" element={<VisualizacaoCompletaPDF/>}/>
 
           // Formulários
@@ -94,6 +101,12 @@ const App = () => (
           <Route path="/formulario/selecao-animais" element={<DataSelecaoAnimais/>}/>
           <Route path="/formulario/identificacao-animais" element={<DataIdentificacaoAnimais/>}/>
           <Route path="/formulario/exames/clinico-laboratorial" element={<DataExameFisicoLaboratorial/>}/>
+          <Route path="/formulario/tratamento" element={<Tratamento/>}/>
+          <Route path="/formulario/observacoes-saude" element={<DataObservacaoSaude/>}/>
+          <Route path="/formulario/colheita-sangue" element={<ColheitaSangue/>}/>
+          <Route path="/formulario/notas-estudo" element={<NotasAoEstudo/>}/>
+          <Route path="/formulario/colheita-leite" element={<ColheitaAmostraLeite/>}/>
+          <Route path="/formulario/finalizacao-pesquisa" element={<FinalizacaoParticipacao/>}/>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
