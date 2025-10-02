@@ -376,13 +376,5 @@ const FormularioMaterialMetodo = () => {
     );
 };
 
-const App = () => (
-    <Router>
-        <Routes>
-            <Route path="*" element={<FormularioMaterialMetodo />} />
-        </Routes>
-    </Router>
-);
-
-export default App;
+export default FormularioMaterialMetodo;
 

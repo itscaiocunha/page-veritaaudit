@@ -107,6 +107,7 @@ const App = () => (
           <Route path="/formulario/notas-estudo" element={<NotasAoEstudo/>}/>
           <Route path="/formulario/colheita-leite" element={<ColheitaAmostraLeite/>}/>
           <Route path="/formulario/finalizacao-pesquisa" element={<FinalizacaoParticipacao/>}/>
+          <Route path="/formulario/participacao-pesquisa" element={<FinalizacaoParticipacao/>}/>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
