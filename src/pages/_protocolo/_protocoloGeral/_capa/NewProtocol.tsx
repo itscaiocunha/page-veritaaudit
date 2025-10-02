@@ -12,6 +12,11 @@ interface ApiListItem {
 }
 
 const Protocolo = () => {
+  // --- Sempre voltar ao topo ao carregar a página ---
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   // --- Estados do Formulário ---
   const [titulo, setTitulo] = useState("");
   const [patrocinador, setPatrocinador] = useState("");

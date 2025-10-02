@@ -195,6 +195,11 @@ const transformEstatisticaData = (etapas: any[] | undefined) => {
 
 // --- COMPONENTE PRINCIPAL ---
 const LocalProtocol = () => {
+  // --- Sempre voltar ao topo ao carregar a página ---
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -458,7 +463,7 @@ const LocalProtocol = () => {
                 control={control}
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
-                    value={value || ""}
+                    value={typeof value === "string" ? value : ""}
                     onChange={(e) => onChange(applyCepMask(e.target.value))}
                     onBlur={(e) => {
                       onBlur();
@@ -522,13 +527,13 @@ const LocalProtocol = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 font-sans">
+    <div className="min-h-screen flex flex-col bg-gray-200">
       {/* --- Cabeçalho --- */}
       <header className="bg-white/30 backdrop-blur-lg shadow-sm w-full p-4 flex items-center justify-center relative border-b border-white/20">
         <Button
-          onClick={() => navigate(-1)}
-          className="absolute left-4 top-1/2 -translate-y-1/2 bg-gray hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded-lg inline-flex items-center text-sm"
-        >
+            onClick={() => navigate(-1)}
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-gray hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded-lg inline-flex items-center text-sm"
+          >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
@@ -537,14 +542,13 @@ const LocalProtocol = () => {
         <h1 className="text-xl sm:text-2xl font-bold text-center text-gray-800">Verita Audit</h1>
       </header>
 
-      <main className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-        <div className="rounded-xl shadow-lg p-8 md:p-10">
-          <h2 className="text-3xl font-bold text-center mb-2 text-gray-900">Local da Execução do Protocolo</h2>
-          <p className="text-center text-gray-500 mb-10">Selecione e preencha as seções necessárias para o estudo.</p>
+      <div className="w-full flex flex-col justify-center items-center p-4 md:p-8 flex-grow">
+        <div className="w-full max-w-4xl rounded-2xl p-6 md:p-8 bg-white/30 backdrop-blur-lg shadow-xl border border-white/20">
+          <h1 className="text-2xl md:text-3xl font-semibold text-center mb-6 text-gray-800">Local da Execução do Protocolo</h1>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-12">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* --- Etapa Clínica --- */}
-            <section className="border border-gray-200 rounded-xl p-6 transition-all">
+            <div className="border rounded-lg p-4 shadow-sm">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-4">
                   <Checkbox
@@ -553,7 +557,7 @@ const LocalProtocol = () => {
                     onCheckedChange={() => handleSectionToggle("clinica")}
                     className="data-[state=checked]:bg-green-400"
                   />
-                  <label htmlFor="toggleClinica" className="text-xl font-bold text-gray-800 cursor-pointer">
+                  <label htmlFor="toggleClinica" className="text-xl font-semibold text-gray-800 cursor-pointer">
                     Etapa Clínica
                   </label>
                 </div>
@@ -590,7 +594,7 @@ const LocalProtocol = () => {
                         </div>
                         {watch(`etapasClinicas.${index}.expanded`) && (
                           <div className="p-4 border-t space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="md:col-span-2">
                                 <Label>
                                   <RequiredField>Identificação/Nome</RequiredField>
@@ -650,7 +654,7 @@ const LocalProtocol = () => {
                   {(errors as any).etapasClinicas?.message && <p className="text-red-500 text-sm mt-2">{(errors as any).etapasClinicas.message}</p>}
                 </div>
               )}
-            </section>
+            </div>
 
             {/* --- Etapa Laboratorial --- */}
             <section className="border border-gray-200 rounded-xl p-6 transition-all">
@@ -662,7 +666,7 @@ const LocalProtocol = () => {
                     onCheckedChange={() => handleSectionToggle("laboratorial")}
                     className="data-[state=checked]:bg-green-400"
                   />
-                  <label htmlFor="toggleLaboratorial" className="text-xl font-bold text-gray-800 cursor-pointer">
+                  <label htmlFor="toggleLaboratorial" className="text-xl font-semibold text-gray-800 cursor-pointer">
                     Etapa Laboratorial/Analítica
                   </label>
                 </div>
@@ -763,7 +767,7 @@ const LocalProtocol = () => {
                     onCheckedChange={() => handleSectionToggle("estatistica")}
                     className="data-[state=checked]:bg-green-400"
                   />
-                  <label htmlFor="toggleEstatistica" className="text-xl font-bold text-gray-800 cursor-pointer">
+                  <label htmlFor="toggleEstatistica" className="text-xl font-semibold text-gray-800 cursor-pointer">
                     Etapa Estatística
                   </label>
                 </div>
@@ -870,7 +874,7 @@ const LocalProtocol = () => {
             </div>
           </form>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

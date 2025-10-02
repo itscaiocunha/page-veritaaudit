@@ -397,7 +397,7 @@ const FormularioInstituicao = () => {
                         render={({ field: { onChange, onBlur, value, ref } }) => (
                             <Input
                                 ref={ref}
-                                value={value || ''}
+                                value={typeof value === "string" ? value : ""}
                                 onChange={(e) => onChange(applyCepMask(e.target.value))}
                                 onBlur={(e) => {
                                     onBlur();

@@ -83,6 +83,11 @@ const FormularioParticipantes = () => {
     const navigate = useNavigate();
     // --- Estado para controlar o status de submissão do formulário. ---
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // --- Sempre voltar ao topo ao carregar a página ---
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }, []);
     // --- Estado para controlar o carregamento da busca de CEP. ---
     const [cepLoading, setCepLoading] = useState<string | null>(null);
     // --- Estado para armazenar a lista de representantes buscada da API. ---
@@ -411,8 +416,17 @@ const FormularioParticipantes = () => {
                             name={`${basePath}.cep` as FieldPath<FormValues>}
                             control={control}
                             render={({ field }) => (
-                                <Input {...field} type="text" maxLength={9} onChange={(e) => field.onChange(applyCepMask(e.target.value))} onBlur={(e) => { field.onBlur(); handleCepBlur(e, basePath); }} className="py-3 h-12 text-base bg-white/50 focus:bg-white/80" />
-                            )} />
+                                <Input
+                                    {...field}
+                                    type="text"
+                                    maxLength={9}
+                                    value={typeof field.value === "string" ? field.value : ""}
+                                    onChange={(e) => field.onChange(applyCepMask(e.target.value))}
+                                    onBlur={(e) => { field.onBlur(); handleCepBlur(e, basePath); }}
+                                    className="py-3 h-12 text-base bg-white/50 focus:bg-white/80"
+                                />
+                            )}
+                        />
                         {cepLoading === basePath && <LoadingSpinner />}
                     </div>
                     <p className="text-red-500 text-sm mt-1">{nestedErrors?.cep?.message}</p>
