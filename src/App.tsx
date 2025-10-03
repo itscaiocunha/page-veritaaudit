@@ -46,7 +46,8 @@ import ColheitaSangue from "./pages/_formulario/ColheitaSangue";
 import NotasAoEstudo from "./pages/_formulario/NotasEstudo";
 import ColheitaAmostraLeite from "./pages/_formulario/ColheitaLeite";
 import FinalizacaoParticipacao from "./pages/_formulario/FinalizacaoPesquisa";
-import EscoreCondicaoCorporal from "./pages/_formulario/condicaoCorporal";
+import EscoreCondicaoCorporal from "./pages/_formulario/CondicaoCorporal";
+import DestinoCarcaca from "./pages/_formulario/DestinoCarcaça";
 
 const queryClient = new QueryClient();
 
@@ -109,6 +110,7 @@ const App = () => (
           <Route path="/formulario/colheita-leite" element={<ColheitaAmostraLeite/>}/>
           <Route path="/formulario/finalizacao-pesquisa" element={<FinalizacaoParticipacao/>}/>
           <Route path="/formulario/condicao-corporal" element={<EscoreCondicaoCorporal/>}/>
+          <Route path="/formulario/destino-carcaca" element={<DestinoCarcaca/>}/>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

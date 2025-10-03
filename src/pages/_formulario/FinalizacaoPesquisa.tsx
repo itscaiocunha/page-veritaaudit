@@ -135,21 +135,21 @@ export default function FinalizacaoParticipacao() {
     // Cabeçalho da tabela
     const yTop = bandY + bandH + 4; // ~50
 
-    // Larguras (somam 267mm): 36 | 28 | 34 | 62 | 56 | 31 | 20
-    const x0 = 15;                // Animal
-    const x1 = x0 + 36;           // Momento (D)
-    const x2 = x1 + 28;           // Data
-    const x3 = x2 + 34;           // Finalização
-    const x4 = x3 + 62;           // Destino
-    const x5 = x4 + 56;           // Observação¹
-    const x6 = x5 + 31;           // Registrado por
-    const x7 = 15 + innerW;       // borda direita
+  // Larguras ajustadas (somam ~267mm): 32 | 32 | 28 | 32 | 56 | 52 | 35
+  const x0 = 15;                // Animal (32)
+  const x1 = x0 + 32;           // Momento (D) (32)
+  const x2 = x1 + 32;           // Data (28)
+  const x3 = x2 + 32;           // Finalização (32)
+  const x4 = x3 + 46;           // Destino (56)
+  const x5 = x4 + 40;           // Observação¹ (52)
+  const x6 = x5 + 50;           // Registrado por (35)
+  const x7 = 15 + innerW;       // borda direita
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.text("Animal", x0 + 3, yTop + 5);
     doc.text("Momento (D)", x1 + 3, yTop + 5);
-    doc.text("Data (DD/MM/AA)", x2 + 3, yTop + 5);
+    doc.text("Data", x2 + 3, yTop + 5);
     doc.text("Finalização", x3 + 3, yTop + 5);
     doc.text("Destino", x4 + 3, yTop + 5);
     doc.text("Observação¹", x5 + 3, yTop + 5);
@@ -223,11 +223,11 @@ export default function FinalizacaoParticipacao() {
     // somente linhas preenchidas
     const filled = linhas.filter((l) => !isLinhaVazia(l));
 
-    // medidas
-    const ROW_H = 18;         // cabe os 3 checkboxes por bloco
-    const startY = 0;         // será calculado após o header
-    const bottomFirst = 200;  // limite para linhas na 1ª página (antes da legenda)
-    const bottomOther = 205;  // nas demais
+  // medidas
+  const ROW_H = 26;         // altura maior para evitar sobreposição dos checkboxes
+  const startY = 0;         // será calculado após o header
+  const bottomFirst = 200;  // limite para linhas na 1ª página (antes da legenda)
+  const bottomOther = 205;  // nas demais
 
     // simular para obter total de páginas
     let pageCount = 1;
