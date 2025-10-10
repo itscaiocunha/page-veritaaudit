@@ -305,39 +305,47 @@ const VisualizacaoCompletaPDF = () => {
     useEffect(() => {
         const getLatestEntry = (key: string) => {
             try {
-                const item = localStorage.getItem(key);
-                if (!item) return null;
-                const data = JSON.parse(item);
-                if (Array.isArray(data)) {
-                    return data.length > 0 ? data[data.length - 1] : null;
-                }
-                return data;
+            const raw = localStorage.getItem(key);
+            if (!raw) return null;
+            const data = JSON.parse(raw);
+            if (Array.isArray(data)) {
+                return data.length ? data[data.length - 1] : null;
+            }
+            return data;
             } catch (e) {
-                console.error(`Erro ao processar a chave ${key} do localStorage:`, e);
-                return null;
+            console.error(`Erro ao ler ${key} do localStorage:`, e);
+            return null;
             }
         };
 
-        setAllData({ 
-            patrocinador: getLatestEntry('dadosPatrocinador'),
-            instituicao: getLatestEntry('dadosInstituicao'),
-            local: getLatestEntry('dadosLocalProtocol'),
-            protocolo: getLatestEntry('fullProtocolData')?.protocolo,
-            introducao: getLatestEntry('dadosIntroducao'),
-            objetivo: getLatestEntry('dadosObjetivo'),
-            justificativa: getLatestEntry('dadosJustificativa'),
-            requisito: getLatestEntry('dadosRequisito'),
-            materialMetodo: getLatestEntry('dadosMaterialMetodo'),
-            analiseEstatistica: getLatestEntry('dadosAnaliseEstatistica'),
-            saude: getLatestEntry('dadosSaude'),
-            eventoAdverso: getLatestEntry('dadosEventoAdverso'),
-            eutanasia: getLatestEntry('dadosEutanasia'),
-            registro: getLatestEntry('dadosRegistro'),
+        // Alguns projetos salvam a capa como array com objeto { protocolo: {...} }
+        const capaRaw = getLatestEntry('capaProtocolData');
+        const protocolo = Array.isArray(capaRaw) ? capaRaw[0]?.protocolo : capaRaw?.protocolo ?? capaRaw?.protocolo;
+
+        setAllData({
+            patrocinador: getLatestEntry('dataPatrocinador'),
+            instituicao:  getLatestEntry('dataInstituicao'),
+            local:        getLatestEntry('dataLocal'),               // <--- era dataLocalProtocol
+            protocolo,                                               // tenta extrair .protocolo se existir
+            introducao:   getLatestEntry('dadosIntroducao'),
+            objetivo:     getLatestEntry('dadosObjetivo'),
+            justificativa:getLatestEntry('dadosJustificativa'),
+            requisito:    getLatestEntry('dadosRequisito'),
+
+            materialMetodo:     getLatestEntry('dadosMaterialMetodo'),
+            analiseEstatistica: getLatestEntry('dadosEstatistica'),  // <--- chave correta
+            saude:              getLatestEntry('dadosSaude'),
+            eventoAdverso:      getLatestEntry('dadosEventoAdverso'),
+            concomitante:       getLatestEntry('dadosConcomitante'), // <--- nova entrada
+            eutanasia:          getLatestEntry('dadosEutanasia'),
+            registro:           getLatestEntry('dadosRegistro'),     // se não existir, fica null sem quebrar
+
             cronograma: getLatestEntry('dadosCronograma'),
-            anexos: getLatestEntry('dadosAnexos'),
-            bibliografia: getLatestEntry('dadosBibliografia'),
+            anexos:     getLatestEntry('dadosAnexos'),
+            bibliografia:getLatestEntry('dadosBibliografia'),
         });
-    }, []);
+        }, []);
+
 
     const handleExportPdf = async () => {
         const content = pdfRef.current;
@@ -397,11 +405,11 @@ const VisualizacaoCompletaPDF = () => {
                 <PaginaConteudoSimples numero="4" titulo="JUSTIFICATIVA" data={allData.justificativa} fieldName="conteudoJustificativa" codigoEstudo={allData.protocolo?.codigoEstudo} />
                 <PaginaMaterialMetodoPt1 data={allData.materialMetodo} codigoEstudo={allData.protocolo?.codigoEstudo} />
                 <PaginaMaterialMetodoPt2 data={allData.materialMetodo} codigoEstudo={allData.protocolo?.codigoEstudo} />
-                <PaginaConteudoSimples numero="6" titulo="ANÁLISE ESTATÍSTICA" data={allData.analiseEstatistica} fieldName="conteudoAnaliseEstatistica" codigoEstudo={allData.protocolo?.codigoEstudo} />
+                <PaginaConteudoSimples numero="6" titulo="ANÁLISE ESTATÍSTICA" data={allData.analiseEstatistica} fieldName="conteudoEstatistica" codigoEstudo={allData.protocolo?.codigoEstudo} />
                 <PaginaConteudoSimples numero="7" titulo="OBSERVAÇÃO GERAL DE SAÚDE" data={allData.saude} fieldName="conteudoSaude" codigoEstudo={allData.protocolo?.codigoEstudo} />
                 <PaginaConteudoSimples numero="8" titulo="EVENTO ADVERSO" data={allData.eventoAdverso} fieldName="conteudoEventoAdverso" codigoEstudo={allData.protocolo?.codigoEstudo} />
                 <PaginaConteudoSimples numero="9" titulo="EUTANÁSIA" data={allData.eutanasia} fieldName="conteudoEutanasia" codigoEstudo={allData.protocolo?.codigoEstudo} />
-                <PaginaConteudoSimples numero="10" titulo="MEDICAÇÃO CONCOMITANTE" data={allData.eutanasia} fieldName="conteudoConcomitante" codigoEstudo={allData.protocolo?.codigoEstudo} />
+                <PaginaConteudoSimples numero="10" titulo="MEDICAÇÃO CONCOMITANTE" data={allData.concomitante} fieldName="conteudoConcomitante" codigoEstudo={allData.protocolo?.codigoEstudo} />
                 <PaginaConteudoSimples numero="11" titulo="REGISTRO E ARQUIVAMENTO DE DADOS" data={allData.registro} fieldName="conteudoRegistro" codigoEstudo={allData.protocolo?.codigoEstudo} />
                 {allData.cronograma && <PaginaCronograma data={allData.cronograma} codigoEstudo={allData.protocolo?.codigoEstudo} />}
                 {allData.anexos && <PaginaAnexos data={allData.anexos} codigoEstudo={allData.protocolo?.codigoEstudo} />}

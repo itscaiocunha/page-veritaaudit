@@ -292,8 +292,6 @@ const LocalProtocol = () => {
           etapasEstatisticas: activeSections.estatistica ? watchedValues.etapasEstatisticas : [],
         };
         localStorage.setItem("dataLocal", JSON.stringify([dataToSave]));
-      } else {
-        localStorage.removeItem("dataLocal");
       }
     }, 500);
 
@@ -388,12 +386,6 @@ const LocalProtocol = () => {
       if (response.ok) {
         const data = await response.json().catch(() => ({}));
         console.log("Protocolo criado com sucesso:", data);
-
-        // limpar storage
-        localStorage.removeItem("capaProtocolData");
-        localStorage.removeItem("dataPatrocinador");
-        localStorage.removeItem("dataInstituicao");
-        localStorage.removeItem("dataLocal");
 
         navigate("/introducao");
       } else {
