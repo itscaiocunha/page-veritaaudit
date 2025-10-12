@@ -50,6 +50,7 @@ import EscoreCondicaoCorporal from "./pages/_formulario/CondicaoCorporal";
 import DestinoCarcaca from "./pages/_formulario/DestinoCarcaça";
 import Necropsia from "./pages/_formulario/Necropsia";
 import EnvioProduto from "./pages/_formulario/EnvioProduto";
+import ColheitaMatriz from "./pages/_formulario/ColheiraMatriz";
 
 const queryClient = new QueryClient();
 
@@ -115,6 +116,7 @@ const App = () => (
           <Route path="/formulario/destino-carcaca" element={<DestinoCarcaca/>}/>
           <Route path="/formulario/necropsia" element={<Necropsia/>}/>
           <Route path="/formulario/envio-produto" element={<EnvioProduto/>}/>
+          <Route path="/formulario/colheita-matriz" element={<ColheitaMatriz/>}/>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
