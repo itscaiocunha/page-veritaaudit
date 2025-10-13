@@ -46,7 +46,7 @@ import ColheitaSangue from "./pages/_formulario/ColheitaSangue";
 import NotasAoEstudo from "./pages/_formulario/NotasEstudo";
 import ColheitaAmostraLeite from "./pages/_formulario/ColheitaLeite";
 import FinalizacaoParticipacao from "./pages/_formulario/FinalizacaoPesquisa";
-import EscoreCondicaoCorporal from "./pages/_formulario/CondicaoCorporal";
+import EscoreCondicaoCorporal from "./pages/_formulario/CondicaoCorporal.tsx";
 import DestinoCarcaca from "./pages/_formulario/DestinoCarcaça";
 import Necropsia from "./pages/_formulario/Necropsia";
 import EnvioProduto from "./pages/_formulario/EnvioProduto";
