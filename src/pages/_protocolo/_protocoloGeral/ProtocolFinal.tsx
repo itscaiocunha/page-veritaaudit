@@ -83,13 +83,15 @@ const PaginaAssinaturas = ({ dadosPatrocinador, dadosInstituicao, codigoEstudo }
 
 const PaginaInformacoesGerais = ({ allData, codigoEstudo }: { allData: any, codigoEstudo?: string }) => {
     const renderAddress = (addr) => addr ? `${addr.logradouro}, ${addr.numero}, ${addr.complemento || ''} - ${addr.bairro}, ${addr.cidade}/${addr.uf} - CEP: ${addr.cep}` : 'Não informado';
+    
+    // ATUALIZADO: A função agora renderiza 'p.numeroRegistro' ou 'p.registro'
     const renderPessoa = (p, title) => (
         p ? <div className="pl-4 mt-2">
             {title && <h4 className="font-bold">{title}</h4>}
             <div className="pl-2">
                 <p><strong>Nome:</strong> {p.nome}</p>
                 <p><strong>Formação:</strong> {p.formacao}</p>
-                {p.registro && <p><strong>Registro:</strong> {p.registro}</p>}
+                {(p.registro || p.numeroRegistro) && <p><strong>Registro:</strong> {p.registro || p.numeroRegistro}</p>}
                 {p.cargo && <p><strong>Cargo:</strong> {p.cargo}</p>}
                 <p><strong>E-mail:</strong> {p.email}</p>
                 <p><strong>Telefone:</strong> {p.telefone}</p>
@@ -302,49 +304,75 @@ const VisualizacaoCompletaPDF = () => {
         };
     }, []);
 
+    // ############# LÓGICA ATUALIZADA #############
     useEffect(() => {
+        // Função auxiliar para buscar dados de outras seções que permanecem em chaves separadas
         const getLatestEntry = (key: string) => {
             try {
-            const raw = localStorage.getItem(key);
-            if (!raw) return null;
-            const data = JSON.parse(raw);
-            if (Array.isArray(data)) {
-                return data.length ? data[data.length - 1] : null;
-            }
-            return data;
+                const raw = localStorage.getItem(key);
+                if (!raw) return null;
+                const data = JSON.parse(raw);
+                if (Array.isArray(data)) {
+                    return data.length ? data[data.length - 1] : null;
+                }
+                return data;
             } catch (e) {
-            console.error(`Erro ao ler ${key} do localStorage:`, e);
-            return null;
+                console.error(`Erro ao ler ${key} do localStorage:`, e);
+                return null;
             }
         };
 
-        // Alguns projetos salvam a capa como array com objeto { protocolo: {...} }
-        const capaRaw = getLatestEntry('capaProtocolData');
-        const protocolo = Array.isArray(capaRaw) ? capaRaw[0]?.protocolo : capaRaw?.protocolo ?? capaRaw?.protocolo;
+        // 1. Busca o objeto principal 'dataRequest' do localStorage
+        const dataRequestRaw = localStorage.getItem('dataRequest');
+        const dataRequest = dataRequestRaw ? JSON.parse(dataRequestRaw) : null;
 
+        // 2. Constrói as estruturas de dados para as props a partir do 'dataRequest'
+        const patrocinador = dataRequest ? {
+            patrocinador: dataRequest.patrocinador,
+            representante: dataRequest.representante,
+            monitores: dataRequest.monitores || [],
+            equipe: dataRequest.tecnicosPatrocinador || [],
+        } : null;
+
+        const instituicao = dataRequest ? {
+            instituicao: dataRequest.instituicao,
+            investigador: dataRequest.investigador,
+            equipeInstituicao: dataRequest.tecnicosInstituicao || [],
+        } : null;
+
+        const protocolo = dataRequest ? {
+            titulo: dataRequest.nome,
+            tipoEstudo: dataRequest.tipoEstudo,
+            especie: dataRequest.especieAnimal,
+            tipoProduto: dataRequest.classeTerapeutica,
+            codigoEstudo: `MESTRE-${dataRequest.protocoloMestreId}-ID-${dataRequest.id}`, // Exemplo de código
+            versaoData: `Versão ${dataRequest.versao} de ${new Date(dataRequest.data_criacao).toLocaleDateString('pt-BR')}`,
+        } : null;
+
+        // 3. Define o estado com os dados montados e busca os dados das outras seções
         setAllData({
-            patrocinador: getLatestEntry('dataPatrocinador'),
-            instituicao:  getLatestEntry('dataInstituicao'),
-            local:        getLatestEntry('dataLocal'),               // <--- era dataLocalProtocol
-            protocolo,                                               // tenta extrair .protocolo se existir
-            introducao:   getLatestEntry('dadosIntroducao'),
-            objetivo:     getLatestEntry('dadosObjetivo'),
-            justificativa:getLatestEntry('dadosJustificativa'),
-            requisito:    getLatestEntry('dadosRequisito'),
-
-            materialMetodo:     getLatestEntry('dadosMaterialMetodo'),
-            analiseEstatistica: getLatestEntry('dadosEstatistica'),  // <--- chave correta
-            saude:              getLatestEntry('dadosSaude'),
-            eventoAdverso:      getLatestEntry('dadosEventoAdverso'),
-            concomitante:       getLatestEntry('dadosConcomitante'), // <--- nova entrada
-            eutanasia:          getLatestEntry('dadosEutanasia'),
-            registro:           getLatestEntry('dadosRegistro'),     // se não existir, fica null sem quebrar
-
+            patrocinador,
+            instituicao,
+            protocolo,
+            // Mantém a busca para as outras seções que não estão no dataRequest
+            local: getLatestEntry('dataLocal'),
+            introducao: getLatestEntry('dadosIntroducao'),
+            objetivo: getLatestEntry('dadosObjetivo'),
+            justificativa: getLatestEntry('dadosJustificativa'),
+            requisito: getLatestEntry('dadosRequisito'),
+            materialMetodo: getLatestEntry('dadosMaterialMetodo'),
+            analiseEstatistica: getLatestEntry('dadosEstatistica'),
+            saude: getLatestEntry('dadosSaude'),
+            eventoAdverso: getLatestEntry('dadosEventoAdverso'),
+            concomitante: getLatestEntry('dadosConcomitante'),
+            eutanasia: getLatestEntry('dadosEutanasia'),
+            registro: getLatestEntry('dadosRegistro'),
             cronograma: getLatestEntry('dadosCronograma'),
-            anexos:     getLatestEntry('dadosAnexos'),
-            bibliografia:getLatestEntry('dadosBibliografia'),
+            anexos: getLatestEntry('dadosAnexos'),
+            bibliografia: getLatestEntry('dadosBibliografia'),
         });
-        }, []);
+    }, []);
+    // ############# FIM DA LÓGICA ATUALIZADA #############
 
 
     const handleExportPdf = async () => {
@@ -388,9 +416,9 @@ const VisualizacaoCompletaPDF = () => {
                 <h1 className="text-xl font-bold">Visualização do Protocolo Final</h1>
                 <div className="flex items-center gap-2">
                      <Button variant="outline" onClick={handleGoHome}>
-                        <Home className="h-4 w-4 mr-2" />
-                        Home
-                    </Button>
+                         <Home className="h-4 w-4 mr-2" />
+                         Home
+                     </Button>
                     <Button onClick={handleExportPdf} className="bg-green-500 hover:bg-green-600" disabled={!scriptsLoaded}>
                         {scriptsLoaded ? <><Download className="h-4 w-4 mr-2" />Baixar PDF</> : 'Carregando...'}
                     </Button>
