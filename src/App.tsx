@@ -32,25 +32,25 @@ import VisualizacaoCompletaPDF from "./pages/_protocolo/_protocoloGeral/Protocol
 import FormularioEutanasia from "./pages/_protocolo/_protocoloGeral/_conteudo/FormularioEutanasia";
 import FormularioAnexos from "./pages/_protocolo/_protocoloGeral/_conteudo/FormularioAnexos";
 import FormularioBibliografia from "./pages/_protocolo/_protocoloGeral/_conteudo/FormularioBibliografia";
-import EquipeExecutora from "./pages/_formulario/_protocoloEquipe/DataEquipeExecutora";
-import TriagemBovino from "./pages/_formulario/_triagem/DataBovino";
-import InventarioPVI from "./pages/_formulario/_inventarioPVI/DataInventarioPVI";
-import PesagemAnimais from "./pages/_formulario/Pesagem";
-import Randomizacao from "./pages/_formulario/Randomizacao";
-import DataSelecaoAnimais from "./pages/_formulario/SelecaoAnimais";
-import DataIdentificacaoAnimais from "./pages/_formulario/IdentificacaoAnimais";
-import DataExameFisicoLaboratorial from "./pages/_formulario/ExameFisicoLaboratorial";
-import Tratamento from "./pages/_formulario/Tratamento";
-import DataObservacaoSaude from "./pages/_formulario/ObservacaoGerais";
-import ColheitaSangue from "./pages/_formulario/ColheitaSangue";
-import NotasAoEstudo from "./pages/_formulario/NotasEstudo";
-import ColheitaAmostraLeite from "./pages/_formulario/ColheitaLeite";
-import FinalizacaoParticipacao from "./pages/_formulario/FinalizacaoPesquisa";
-import EscoreCondicaoCorporal from "./pages/_formulario/CondicaoCorporal.tsx";
-import DestinoCarcaca from "./pages/_formulario/DestinoCarcaça";
-import Necropsia from "./pages/_formulario/Necropsia";
-import EnvioProduto from "./pages/_formulario/EnvioProduto";
-import ColheitaMatriz from "./pages/_formulario/ColheiraMatriz";
+// import EquipeExecutora from "./pages/_formulario/_protocoloEquipe/DataEquipeExecutora";
+// import TriagemBovino from "./pages/_formulario/_triagem/DataBovino";
+// import InventarioPVI from "./pages/_formulario/_inventarioPVI/DataInventarioPVI";
+// import PesagemAnimais from "./pages/_formulario/Pesagem";
+// import Randomizacao from "./pages/_formulario/Randomizacao";
+// import DataSelecaoAnimais from "./pages/_formulario/SelecaoAnimais";
+// import DataIdentificacaoAnimais from "./pages/_formulario/IdentificacaoAnimais";
+// import DataExameFisicoLaboratorial from "./pages/_formulario/ExameFisicoLaboratorial";
+// import Tratamento from "./pages/_formulario/Tratamento";
+// import DataObservacaoSaude from "./pages/_formulario/ObservacaoGerais";
+// import ColheitaSangue from "./pages/_formulario/ColheitaSangue";
+// import NotasAoEstudo from "./pages/_formulario/NotasEstudo";
+// import ColheitaAmostraLeite from "./pages/_formulario/ColheitaLeite";
+// import FinalizacaoParticipacao from "./pages/_formulario/FinalizacaoPesquisa";
+// import EscoreCondicaoCorporal from "./pages/_formulario/CondicaoCorporal.tsx";
+// import DestinoCarcaca from "./pages/_formulario/DestinoCarcaça";
+// import Necropsia from "./pages/_formulario/Necropsia";
+// import EnvioProduto from "./pages/_formulario/EnvioProduto";
+// import ColheitaMatriz from "./pages/_formulario/ColheiraMatriz";
 
 const queryClient = new QueryClient();
 
@@ -98,7 +98,7 @@ const App = () => (
           <Route path="/protocolo-final" element={<VisualizacaoCompletaPDF/>}/>
 
           // Formulários
-          <Route path="/formulario/equipe-executora" element={<EquipeExecutora/>}/>
+          {/* <Route path="/formulario/equipe-executora" element={<EquipeExecutora/>}/>
           <Route path="/formulario/triagem/bovino" element={<TriagemBovino/>}/>
           <Route path="/formulario/inventario/produto-veterinario" element={<InventarioPVI/>}/>
           <Route path="/formulario/pesagem" element={<PesagemAnimais/>}/>
@@ -116,7 +116,7 @@ const App = () => (
           <Route path="/formulario/destino-carcaca" element={<DestinoCarcaca/>}/>
           <Route path="/formulario/necropsia" element={<Necropsia/>}/>
           <Route path="/formulario/envio-produto" element={<EnvioProduto/>}/>
-          <Route path="/formulario/colheita-matriz" element={<ColheitaMatriz/>}/>
+          <Route path="/formulario/colheita-matriz" element={<ColheitaMatriz/>}/> */}
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
