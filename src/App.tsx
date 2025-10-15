@@ -33,6 +33,7 @@ import FormularioEutanasia from "./pages/_protocolo/_protocoloGeral/_conteudo/Fo
 import FormularioAnexos from "./pages/_protocolo/_protocoloGeral/_conteudo/FormularioAnexos";
 import FormularioBibliografia from "./pages/_protocolo/_protocoloGeral/_conteudo/FormularioBibliografia";
 import ColheitaSangueSeriada from "./pages/_formulario/SangueSeriado";
+import ColheitaAmostraLeite from "./pages/_formulario/ColheitaAmostraLeite";
 // import EquipeExecutora from "./pages/_formulario/_protocoloEquipe/DataEquipeExecutora";
 // import TriagemBovino from "./pages/_formulario/_triagem/DataBovino";
 // import InventarioPVI from "./pages/_formulario/_inventarioPVI/DataInventarioPVI";
@@ -119,6 +120,7 @@ const App = () => (
           <Route path="/formulario/envio-produto" element={<EnvioProduto/>}/>
           <Route path="/formulario/colheita-matriz" element={<ColheitaMatriz/>}/> */}
           <Route path="/formulario/sangue-seriada" element={<ColheitaSangueSeriada/>}/>
+          <Route path="/formulario/colheita-amostra-leite" element={<ColheitaAmostraLeite />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
