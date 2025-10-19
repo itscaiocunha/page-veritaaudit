@@ -34,6 +34,9 @@ import FormularioAnexos from "./pages/_protocolo/_protocoloGeral/_conteudo/Formu
 import FormularioBibliografia from "./pages/_protocolo/_protocoloGeral/_conteudo/FormularioBibliografia";
 import ColheitaSangueSeriada from "./pages/_formulario/SangueSeriado";
 import ColheitaAmostraLeite from "./pages/_formulario/ColheitaAmostraLeite";
+import RastreamentoDocumentos from "./pages/_formulario/RastreamentoDocumento";
+import LocalEtapaClinica from "./pages/_formulario/LocalEtapaClinica";
+import EventoAdverso from "./pages/_formulario/EventoAdverso";
 // import EquipeExecutora from "./pages/_formulario/_protocoloEquipe/DataEquipeExecutora";
 // import TriagemBovino from "./pages/_formulario/_triagem/DataBovino";
 // import InventarioPVI from "./pages/_formulario/_inventarioPVI/DataInventarioPVI";
@@ -121,6 +124,9 @@ const App = () => (
           <Route path="/formulario/colheita-matriz" element={<ColheitaMatriz/>}/> */}
           <Route path="/formulario/sangue-seriada" element={<ColheitaSangueSeriada/>}/>
           <Route path="/formulario/colheita-amostra-leite" element={<ColheitaAmostraLeite />} />
+          <Route path="/formulario/rastreamento-documento" element={<RastreamentoDocumentos />} />
+          <Route path="/formulario/etapa-clinica" element={<LocalEtapaClinica />} />
+          <Route path="/formulario/evento-adverso" element={<EventoAdverso />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
