@@ -10,12 +10,11 @@ interface DashboardProps {
   formData?: { name?: string };
 }
 
+// ATUALIZADO: Interface reflete os dados da API
 interface Protocolo {
-  titulo: string;
+  id: number;
   codigo: string;
-  patrocinador: string;
-  miniatura: string | null;
-  index: number;
+  dataCriacao: string; // Vem como "AAAA-MM-DD"
 }
 
 /* Helpers */
@@ -28,27 +27,41 @@ const getInitials = (text?: string) => {
     .slice(0, 2);
 };
 
-/* Card Component */
-const ProtocoloCard: React.FC<{ protocolo: Protocolo; onClick: () => void }> = ({ protocolo, onClick }) => {
-  const initials = getInitials(protocolo.titulo);
+// NOVO: Helper para formatar a data
+const formatarData = (isoDate: string) => {
+  if (!isoDate) return "Data desconhecida";
+  try {
+    const [ano, mes, dia] = isoDate.split("-");
+    return `${dia}/${mes}/${ano}`;
+  } catch (e) {
+    console.error("Erro ao formatar data:", isoDate, e);
+    return isoDate; // fallback
+  }
+};
 
+const ProtocoloCard: React.FC<{ protocolo: Protocolo; onClick: () => void }> = ({
+  protocolo,
+  onClick,
+}) => {
   return (
     <div
       onClick={onClick}
-      className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow border border-gray-200 flex flex-col overflow-hidden cursor-pointer"
+      className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow border border-gray-200 flex flex-col overflow-hidden cursor-pointer min-h-[160px]"
       role="button"
-      aria-label={`Abrir protocolo ${protocolo.titulo}`}
+      aria-label={`Abrir protocolo ${protocolo.codigo}`}
     >
-      <div className="p-4 flex-grow">
-        <h3 className="font-bold text-lg text-gray-800 truncate" title={protocolo.titulo}>
-          {protocolo.titulo}
+      <div className="p-4 flex-grow flex flex-col justify-between">
+        <h3
+          className="font-bold text-lg text-gray-800 truncate"
+          title={protocolo.codigo}
+        >
+          {protocolo.codigo}
         </h3>
-        <p className="text-sm text-gray-600 mt-2">
-          <strong>Código:</strong> {protocolo.codigo}
-        </p>
-        <p className="text-sm text-gray-500">
-          <strong>Patrocinador:</strong> {protocolo.patrocinador}
-        </p>
+        <div>
+          <p className="text-sm text-gray-600 mt-2">
+            <strong>Criação:</strong> {formatarData(protocolo.dataCriacao)}
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -59,78 +72,80 @@ const Dashboard: React.FC<DashboardProps> = ({ formData }) => {
   const [currentPage, setCurrentPage] = useState<PageType>("home");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [protocolos, setProtocolos] = useState<Protocolo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    try {
-      const rawPatro = localStorage.getItem("dadosPatrocinador");
-      const rawFull = localStorage.getItem("fullProtocolData");
+    const fetchProtocolos = async () => {
+      setIsLoading(true);
+      setError(null);
 
-      const parsedPatro = rawPatro ? JSON.parse(rawPatro) : [];
-      const parsedFull = rawFull ? JSON.parse(rawFull) : [];
+      const apiKey =
+        "2NtzCUDl8Ib2arnDRck0xK8taguGeFYuZqnUzpiZ9Wp-tUZ45--/i=tKxzwTPBvtykMSx!0t?7c/Z?NllkokY=TEC2DSonmOMUu0gxdCeh70/rA2NSsm7Ohjn7VM2BeP";
+      
+      let TOKEN = sessionStorage.getItem("token");
 
-      const patrocinadoresArray = Array.isArray(parsedPatro)
-        ? parsedPatro
-        : (parsedPatro && Object.keys(parsedPatro).length ? [parsedPatro] : []);
-      const fullDataArray = Array.isArray(parsedFull)
-        ? parsedFull
-        : (parsedFull && Object.keys(parsedFull).length ? [parsedFull] : []);
-
-      const numProtocolos = Math.max(patrocinadoresArray.length, fullDataArray.length);
-
-      if (numProtocolos === 0) {
-        setProtocolos([]);
+      if (!TOKEN) {
+        setError("Usuário não autenticado. Faça o login novamente.");
+        setIsLoading(false);
+        navigate("/login");
         return;
       }
+      
+      TOKEN = TOKEN.replace(/"/g, ''); 
 
-      const loaded: Protocolo[] = [];
-
-      for (let i = 0; i < numProtocolos; i++) {
-        const patrocinadorData = patrocinadoresArray[i] || {};
-        const fullData = fullDataArray[i] || {};
-
-        const titulo =
-          fullData?.protocolo?.titulo ||
-          fullData?.titulo ||
-          (typeof fullData === "string" ? fullData : `Protocolo ${i + 1}`);
-
-        const codigo =
-          fullData?.codigoEstudo ||
-          fullData?.protocolo?.codigoEstudo ||
-          fullData?.codigo ||
-          `COD-${(i + 1).toString().padStart(3, "0")}`;
-
-        const patrocinador =
-          patrocinadorData?.patrocinador?.nome ||
-          fullData?.protocolo?.patrocinador ||
-          fullData?.patrocinador ||
-          "Patrocinador Desconhecido";
-
-        loaded.push({
-          titulo,
-          codigo,
-          patrocinador,
-          miniatura: null, // gerada no card
-          index: i,
+      const API_URL = `https://verita-brgchubha6ceathm.brazilsouth-01.azurewebsites.net/api/protocolo`;
+      
+      try {
+        const response = await fetch(API_URL, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${TOKEN}`,
+            "X-API-KEY": apiKey,
+          },
         });
-      }
 
-      setProtocolos(loaded);
-    } catch (err) {
-      console.error("Erro ao carregar dados do localStorage:", err);
-      setProtocolos([]);
-    }
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            setError("Sessão expirada ou não autorizada. Faça o login novamente.");
+             navigate("/login");
+          } else {
+            const errorData = await response.text();
+            throw new Error(
+              `Erro ${response.status}: ${response.statusText}. Detalhes: ${errorData}`
+            );
+          }
+          throw new Error(`Erro de autenticação ${response.status}`);
+        }
+
+        const data: Protocolo[] = await response.json();
+        setProtocolos(data);
+      } catch (err) {
+        console.error("Erro ao carregar dados da API:", err);
+        if (err instanceof Error && !error) {
+          setError(err.message);
+        } else if (!error) {
+          setError("Ocorreu um erro desconhecido.");
+        }
+        setProtocolos([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProtocolos();
   }, []);
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
       <div
         className={`fixed lg:static z-50 h-full transition-all duration-300 bg-white shadow-lg ${
           isSidebarOpen ? "w-64" : "w-16"
         } lg:w-64 lg:block ${isSidebarOpen ? "block" : "hidden"} md:flex`}
       >
-       <Sidebar
+        <Sidebar
           currentPage={currentPage}
           onPageChange={(p) => setCurrentPage(p as PageType)}
           onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -141,11 +156,16 @@ const Dashboard: React.FC<DashboardProps> = ({ formData }) => {
       <div className="flex-1 h-screen overflow-y-auto p-4 lg:p-8 bg-gray-50 transition-all duration-300">
         <header className="sticky top-0 bg-gray-50 z-50 p-4 shadow-md flex flex-col space-y-4">
           <div className="flex justify-between items-center">
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden bg-white p-2 rounded-md shadow-md">
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="lg:hidden bg-white p-2 rounded-md shadow-md"
+            >
               <Menu className="h-6 w-6 text-gray-600" />
             </button>
 
-            <h2 className="text-xl lg:text-2xl font-bold text-gray-800">Bem-vindo(a), {formData?.name || "Usuário"}</h2>
+            <h2 className="text-xl lg:text-2xl font-bold text-gray-800">
+              Bem-vindo(a), {formData?.name || "Usuário"}
+            </h2>
 
             <div className="flex items-center space-x-4">
               <div className="relative hidden sm:block">
@@ -157,7 +177,13 @@ const Dashboard: React.FC<DashboardProps> = ({ formData }) => {
                 <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               </div>
 
-              <button onClick={() => navigate("/welcome")} className="flex items-center space-x-2 text-gray-600 hover:text-gray-800">
+              <button
+                onClick={() => {
+                  sessionStorage.removeItem("token");
+                  navigate("/login");
+                }}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+              >
                 <LogOut className="h-5 w-5" />
                 <span>Sair</span>
               </button>
@@ -167,25 +193,41 @@ const Dashboard: React.FC<DashboardProps> = ({ formData }) => {
 
         {currentPage === "home" && (
           <main className="space-y-6 lg:space-y-12 mt-12">
-            <h3 className="text-2xl font-bold text-gray-700 mb-6">Meus Protocolos</h3>
+            <h3 className="text-2xl font-bold text-gray-700 mb-6">
+              Meus Protocolos
+            </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {/* Criar Novo */}
               <div
                 role="button"
                 onClick={() => navigate("/protocolo/criar")}
-                className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-6 text-gray-500 hover:bg-gray-100 hover:border-gray-400 transition h-full min-h-[250px] cursor-pointer"
+                className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-6 text-gray-500 hover:bg-gray-100 hover:border-gray-400 transition h-full min-h-[160px] cursor-pointer"
               >
                 <PlusCircle className="h-10 w-10 mb-2" />
                 <span className="font-semibold">Criar Novo Protocolo</span>
               </div>
 
-              {/* Protocolos */}
-              {protocolos.length === 0 ? (
-                <div className="col-span-full text-center text-gray-500 py-12">Nenhum protocolo encontrado.</div>
+              {/* Protocolos (ATUALIZADO) */}
+              {isLoading ? (
+                <div className="col-span-full text-center text-gray-500 py-12">
+                  Carregando protocolos...
+                </div>
+              ) : error ? (
+                <div className="col-span-full text-center text-red-500 py-12">
+                  {error}
+                </div>
+              ) : protocolos.length === 0 ? (
+                <div className="col-span-full text-center text-gray-500 py-12">
+                  Nenhum protocolo encontrado.
+                </div>
               ) : (
                 protocolos.map((p) => (
-                  <ProtocoloCard key={p.index} protocolo={p} onClick={() => navigate(`/protocolo-final`)} />
+                  <ProtocoloCard
+                    key={p.id}
+                    protocolo={p}
+                    onClick={() => navigate(`/projeto/${p.id}`)}
+                  />
                 ))
               )}
             </div>

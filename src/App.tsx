@@ -37,6 +37,7 @@ import ColheitaAmostraLeite from "./pages/_formulario/ColheitaAmostraLeite";
 import RastreamentoDocumentos from "./pages/_formulario/RastreamentoDocumento";
 import LocalEtapaClinica from "./pages/_formulario/LocalEtapaClinica";
 import EventoAdverso from "./pages/_formulario/EventoAdverso";
+import ProjetoPage from "./pages/Projeto";
 // import EquipeExecutora from "./pages/_formulario/_protocoloEquipe/DataEquipeExecutora";
 // import TriagemBovino from "./pages/_formulario/_triagem/DataBovino";
 // import InventarioPVI from "./pages/_formulario/_inventarioPVI/DataInventarioPVI";
@@ -80,6 +81,7 @@ const App = () => (
 
           // Home
           <Route path="/dashboard" element={<Dashboard formData={{ name: "Admin" }} />} />
+          <Route path="/projeto/:id" element={<ProjetoPage/>} />
 
           // Protocolo Geral
           <Route path="/protocolo/criar"  element={<Protocolo />}/>
@@ -100,7 +102,7 @@ const App = () => (
           <Route path="/cronograma" element={<FormularioCronograma/>}/> //12
           <Route path="/anexos" element={<FormularioAnexos/>}/> //13
           <Route path="/bibliografia" element={<FormularioBibliografia/>}/> //14
-          <Route path="/protocolo-final" element={<VisualizacaoCompletaPDF/>}/>
+          <Route path="/protocolo-final/:id" element={<VisualizacaoCompletaPDF/>}/>
 
           // Formulários
           {/* <Route path="/formulario/equipe-executora" element={<EquipeExecutora/>}/>

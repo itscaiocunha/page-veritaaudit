@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Home } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useNavigate, BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-// --- HELPERS ---
+// --- HELPERS & WRAPPERS ---
 const PageWrapper = ({ children, innerRef, codigoEstudo }: { children: React.ReactNode, innerRef?: React.Ref<HTMLDivElement>, codigoEstudo?: string }) => (
     <div 
         ref={innerRef}
@@ -40,52 +40,52 @@ const SectionTitle = ({ number, title }: { number: string, title: string }) => (
     <h2 className="text-xl font-bold mb-6">{`${number} ${title}`}</h2>
 );
 
-// --- COMPONENTES DE PÁGINA ---
+// --- PAGE COMPONENTS ---
 
-const Capa = ({ data }: { data: any }) => (
-    <PageWrapper innerRef={null} codigoEstudo={data?.protocolo?.codigoEstudo}>
+const Capa = ({ data, codigoEstudo, versaoData }: { data: any, codigoEstudo: string, versaoData: string }) => (
+    <PageWrapper codigoEstudo={codigoEstudo}>
         <div className="text-center flex-grow flex flex-col justify-center items-center">
             <h1 className="text-2xl font-bold my-4 uppercase">Protocolo de Estudo</h1>
             <div className="border-b-2 border-black mt-6 w-full text-center py-1">
-                <span className="text-black font-semibold text-lg">{data?.protocolo?.titulo || 'Título do Estudo'}</span>
+                <span className="text-black font-semibold text-lg">{data?.nome || 'Título do Estudo'}</span>
             </div>
         </div>
         <div className="text-base space-y-3">
-             <div className="flex"><p className="font-bold w-64 shrink-0">ESTUDO CLÍNICO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.tipoEstudo || ''}</span></div></div>
-             <div className="flex"><p className="font-bold w-64 shrink-0">PATROCINADOR</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.patrocinador?.patrocinador?.nome || ''}</span></div></div>              <div className="flex"><p className="font-bold w-64 shrink-0">ESPÉCIE ALVO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.especie || 'Não informado'}</span></div></div>
-             <div className="flex"><p className="font-bold w-64 shrink-0">CLASSE TERAPÊUTICA</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.tipoProduto || 'Não informado'}</span></div></div>
-             <div className="flex"><p className="font-bold w-64 shrink-0">CÓDIGO DO ESTUDO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.codigoEstudo || ''}</span></div></div>
-             <div className="flex"><p className="font-bold w-64 shrink-0">VERSÃO E DATA</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.protocolo?.versaoData || ''}</span></div></div>
+            <div className="flex"><p className="font-bold w-64 shrink-0">ESTUDO CLÍNICO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.tipoEstudo || ''}</span></div></div>
+            <div className="flex"><p className="font-bold w-64 shrink-0">PATROCINADOR</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.patrocinador?.nome || ''}</span></div></div>
+            <div className="flex"><p className="font-bold w-64 shrink-0">ESPÉCIE ALVO</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.especieAnimal || 'Não informado'}</span></div></div>
+            <div className="flex"><p className="font-bold w-64 shrink-0">CLASSE TERAPÊUTICA</p><div className="border-b border-black flex-grow"><span className="pl-2">{data?.classeTerapeutica || 'Não informado'}</span></div></div>
+            <div className="flex"><p className="font-bold w-64 shrink-0">CÓDIGO DO ESTUDO</p><div className="border-b border-black flex-grow"><span className="pl-2">{codigoEstudo}</span></div></div>
+            <div className="flex"><p className="font-bold w-64 shrink-0">VERSÃO E DATA</p><div className="border-b border-black flex-grow"><span className="pl-2">{versaoData}</span></div></div>
         </div>
     </PageWrapper>
 );
 
-const PaginaAssinaturas = ({ dadosPatrocinador, dadosInstituicao, codigoEstudo }: { dadosPatrocinador: any, dadosInstituicao: any, codigoEstudo?: string }) => (
+const PaginaAssinaturas = ({ data, codigoEstudo }: { data: any, codigoEstudo?: string }) => (
     <PageWrapper codigoEstudo={codigoEstudo}>
         <h2 className="text-xl font-bold text-center mb-8">PÁGINA DE ASSINATURAS</h2>
         <p className="text-sm mb-16">Li este protocolo e concordo que ele seja conduzido em conformidade com o estipulado.</p>
         <div className="space-y-20">
             <div className="flex flex-col items-center">
                 <div className="border-b border-black w-3/4"></div>
-                <p className="text-center mt-2 text-sm font-semibold">{dadosPatrocinador?.representante?.nome || " "}</p>
+                <p className="text-center mt-2 text-sm font-semibold">{data?.representante?.nome || " "}</p>
                 <p className="text-center text-xs">Representante do Patrocinador</p>
-                <p className="text-center text-xs font-bold">{dadosPatrocinador?.patrocinador?.nome || " "}</p>
+                <p className="text-center text-xs font-bold">{data?.patrocinador?.nome || " "}</p>
             </div>
             <div className="flex flex-col items-center">
                 <div className="border-b border-black w-3/4"></div>
-                <p className="text-center mt-2 text-sm font-semibold">{dadosInstituicao?.investigador?.nome || " "}</p>
+                <p className="text-center mt-2 text-sm font-semibold">{data?.investigador?.nome || " "}</p>
                 <p className="text-center text-xs">Investigador</p>
-                <p className="text-center text-xs font-bold">{dadosInstituicao?.instituicao?.nome || " "}</p>
+                <p className="text-center text-xs font-bold">{data?.instituicao?.nome || " "}</p>
             </div>
         </div>
     </PageWrapper>
 );
 
-const PaginaInformacoesGerais = ({ allData, codigoEstudo }: { allData: any, codigoEstudo?: string }) => {
-    const renderAddress = (addr) => addr ? `${addr.logradouro}, ${addr.numero}, ${addr.complemento || ''} - ${addr.bairro}, ${addr.cidade}/${addr.uf} - CEP: ${addr.cep}` : 'Não informado';
+const PaginaInformacoesGerais = ({ data, codigoEstudo }: { data: any, codigoEstudo?: string }) => {
+    const renderAddress = (addr: any) => addr ? `${addr.logradouro}, ${addr.numero}, ${addr.complemento || ''} - ${addr.bairro}, ${addr.cidade}/${addr.uf} - CEP: ${addr.cep}` : 'Não informado';
     
-    // ATUALIZADO: A função agora renderiza 'p.numeroRegistro' ou 'p.registro'
-    const renderPessoa = (p, title) => (
+    const renderPessoa = (p: any, title: string) => (
         p ? <div className="pl-4 mt-2">
             {title && <h4 className="font-bold">{title}</h4>}
             <div className="pl-2">
@@ -107,30 +107,30 @@ const PaginaInformacoesGerais = ({ allData, codigoEstudo }: { allData: any, codi
                 <section>
                     <h3 className="font-bold">1.1 Patrocinador</h3>
                     <div className="pl-4">
-                        <p><strong>Nome:</strong> {allData.patrocinador?.patrocinador?.nome}</p>
-                        <p><strong>Endereço:</strong> {renderAddress(allData.patrocinador?.patrocinador?.endereco)}</p>
-                        <p><strong>Telefone:</strong> {allData.patrocinador?.patrocinador?.telefone}</p>
+                        <p><strong>Nome:</strong> {data.patrocinador?.nome}</p>
+                        <p><strong>Endereço:</strong> {renderAddress(data.patrocinador?.endereco)}</p>
+                        <p><strong>Telefone:</strong> {data.patrocinador?.telefone}</p>
                     </div>
-                    {renderPessoa(allData.patrocinador?.representante, '1.1.1 Representante do Patrocinador')}
+                    {renderPessoa(data.representante, '1.1.1 Representante do Patrocinador')}
                     <div className="pl-4 mt-2">
                         <h4 className="font-bold">1.1.2 Monitor(es) do Estudo</h4>
-                        {allData.patrocinador?.monitores?.map((m, i) => <div key={i} className="mb-2">{renderPessoa(m, '')}</div>)}
+                        {data.monitores?.map((m: any, i: number) => <div key={i} className="mb-2">{renderPessoa(m, '')}</div>)}
                     </div>
                      <div className="pl-4 mt-2">
                         <h4 className="font-bold">1.1.3 Equipe do Patrocinador</h4>
-                        {allData.patrocinador?.equipe?.map((m, i) => <div key={i} className="mb-2">{renderPessoa(m, '')}</div>)}
+                        {data.tecnicosPatrocinador?.map((m: any, i: number) => <div key={i} className="mb-2">{renderPessoa(m, '')}</div>)}
                     </div>
                 </section>
                 <section className="mt-4">
                      <h3 className="font-bold">1.2 Instituição Responsável</h3>
                      <div className="pl-4">
-                        <p><strong>Nome:</strong> {allData.instituicao?.instituicao?.nome}</p>
-                        <p><strong>Endereço:</strong> {renderAddress(allData.instituicao?.instituicao?.endereco)}</p>
+                        <p><strong>Nome:</strong> {data.instituicao?.nome}</p>
+                        <p><strong>Endereço:</strong> {renderAddress(data.instituicao?.endereco)}</p>
                      </div>
-                     {renderPessoa(allData.instituicao?.investigador, '1.2.1 Investigador')}
+                     {renderPessoa(data.investigador, '1.2.1 Investigador')}
                      <div className="pl-4 mt-2">
                         <h4 className="font-bold">1.2.2 Equipe Técnica</h4>
-                        {allData.instituicao?.equipeInstituicao?.map((m, i) => <div key={i} className="mb-2">{renderPessoa(m, '')}</div>)}
+                        {data.tecnicosInstituicao?.map((m: any, i: number) => <div key={i} className="mb-2">{renderPessoa(m, '')}</div>)}
                      </div>
                 </section>
             </div>
@@ -145,142 +145,15 @@ const PaginaConteudoSimples = ({ numero, titulo, data, fieldName, codigoEstudo }
     </PageWrapper>
 );
 
-const PaginaMaterialMetodoPt1 = ({ data, codigoEstudo }: { data: any, codigoEstudo?: string }) => (
-    <PageWrapper codigoEstudo={codigoEstudo}>
-        <SectionTitle number="5." title="MATERIAL E MÉTODO" />
-        {data ? (
-            <div className="space-y-6 text-sm">
-                <section>
-                    <h3 className="font-bold text-base mb-2">5.1 Animais</h3>
-                    <div className="pl-4 space-y-4">
-                        <div>
-                            <h4 className="font-semibold">5.1.1 Origem e Destino</h4>
-                            <p className="pl-2">{data.animais?.origemDestino}</p>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold">5.1.2 Características Gerais</h4>
-                            <Table className="mt-2 text-xs">
-                                <TableHeader><TableRow><TableHead>Espécie</TableHead><TableHead>Raça</TableHead><TableHead>Sexo</TableHead><TableHead>Idade</TableHead><TableHead>Peso</TableHead><TableHead>Identificação</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {data.animais?.caracteristicasGerais?.map((animal: any, index: number) => (
-                                        <TableRow key={index}><TableCell>{animal.especie}</TableCell><TableCell>{animal.raca}</TableCell><TableCell>{animal.sexo}</TableCell><TableCell>{animal.idade}</TableCell><TableCell>{animal.peso}</TableCell><TableCell>{animal.identificacao}</TableCell></TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold">5.1.3 Justificativa do "n" amostral</h4>
-                            <p className="pl-2 whitespace-pre-wrap">{data.animais?.justificativaN}</p>
-                        </div>
-                    </div>
-                </section>
-                <section>
-                    <h3 className="font-bold text-base mb-2">5.2 Manejo e Alojamento</h3>
-                    <div className="pl-4 space-y-4">
-                         <div><h4 className="font-semibold">5.2.1 Instalação e Manejo</h4><p className="pl-2 whitespace-pre-wrap">{data.manejoAlojamento?.instalacaoManejo}</p></div>
-                         <div><h4 className="font-semibold">5.2.2 Alimentação e Água</h4><p className="pl-2 whitespace-pre-wrap">{data.manejoAlojamento?.alimentacaoAgua}</p></div>
-                    </div>
-                </section>
-                 <section>
-                    <h3 className="font-bold text-base mb-2">5.3 Critérios de Inclusão, exclusão e remoção</h3>
-                    <div className="pl-4 space-y-4">
-                         <div><h4 className="font-semibold">5.3.1 Critérios de Inclusão</h4><p className="pl-2 whitespace-pre-wrap">{data.criterios?.inclusao}</p></div>
-                         <div><h4 className="font-semibold">5.3.2 Critérios de Exclusão</h4><p className="pl-2 whitespace-pre-wrap">{data.criterios?.exclusao}</p></div>
-                         <div><h4 className="font-semibold">5.3.3 Remoção de Animais</h4><p className="pl-2 whitespace-pre-wrap">{data.criterios?.remocao}</p></div>
-                    </div>
-                </section>
-                 <section>
-                    <h3 className="font-bold text-base mb-2">5.4 Avaliação Clínica para Seleção</h3>
-                    <div className="pl-4 space-y-4">
-                         <div><h4 className="font-semibold">5.4.1 Exame Físico</h4><p className="pl-2 whitespace-pre-wrap">{data.avaliacaoClinica?.exameFisico}</p></div>
-                         <div><h4 className="font-semibold">5.4.2 Exame Laboratorial</h4><p className="pl-2 whitespace-pre-wrap">{data.avaliacaoClinica?.exameLaboratorial}</p></div>
-                         {data.avaliacaoClinica?.outrasAvaliacoes?.length > 0 && <div><h4 className="font-semibold">Outras Avaliações</h4>{data.avaliacaoClinica.outrasAvaliacoes.map((item:any, i:number) => <div key={i} className="pl-2"><p><strong>{item.nome}:</strong> {item.descricao}</p></div>)}</div>}
-                    </div>
-                </section>
-                 <section>
-                    <h3 className="font-bold text-base mb-2">5.5 Aclimatação/Quarentena</h3><p className="pl-4 whitespace-pre-wrap">{data.aclimatacao}</p>
-                </section>
-            </div>
-        ) : <p>Conteúdo não informado.</p>}
-    </PageWrapper>
-);
-
-const PaginaMaterialMetodoPt2 = ({ data, codigoEstudo }: { data: any, codigoEstudo?: string }) => (
-    <PageWrapper codigoEstudo={codigoEstudo}>
-        <SectionTitle number="5." title="MATERIAL E MÉTODO (continuação)" />
-        {data ? (
-            <div className="space-y-6 text-sm">
-                 <section>
-                    <h3 className="font-bold text-base mb-2">5.6 Seleção</h3><p className="pl-4 whitespace-pre-wrap">{data.selecao}</p>
-                    <h3 className="font-bold text-base mb-2 mt-4">5.7 Randomização</h3><p className="pl-4 whitespace-pre-wrap">{data.randomizacao}</p>
-                    <h3 className="font-bold text-base mb-2 mt-4">5.8 Cegamento</h3><p className="pl-4 whitespace-pre-wrap">{data.cegamento}</p>
-                </section>
-                <section>
-                    <h3 className="font-bold text-base mb-2">5.9 Tratamento</h3>
-                    <div className="pl-4 space-y-4">
-                         <div><h4 className="font-semibold">Descrição</h4><p className="pl-2 whitespace-pre-wrap">{data.tratamento?.descricao}</p></div>
-                        <div>
-                            <h4 className="font-semibold">Produto Veterinário Investigacional (PVI)</h4>
-                            <div className="pl-2"><p><strong>Identificação:</strong> {data.tratamento?.pvi?.identificacao}</p><p><strong>Princípio Ativo:</strong> {data.tratamento?.pvi?.principioAtivo}</p></div>
-                        </div>
-                    </div>
-                </section>
-                 <section>
-                    <h3 className="font-bold text-base mb-2">5.10 Parâmetros de Avaliação</h3><p className="pl-4 whitespace-pre-wrap">{data.parametrosAvaliacao}</p>
-                </section>
-            </div>
-        ) : <p>Conteúdo não informado.</p>}
-    </PageWrapper>
-);
-
-const PaginaCronograma = ({ data, codigoEstudo }: { data: any, codigoEstudo?: string }) => (
-    <PageWrapper codigoEstudo={codigoEstudo}>
-        <SectionTitle number="12." title="CRONOGRAMA DO ESTUDO" />
-        <p className="text-sm mb-4"><strong>Duração do Estudo:</strong> {data?.duracaoEstudo || 'N/A'} dias</p>
-        <Table>
-            <TableHeader><TableRow><TableHead>Dia do Estudo</TableHead><TableHead>Datas</TableHead><TableHead>Atividade</TableHead><TableHead>Fichas</TableHead></TableRow></TableHeader>
-            <TableBody>
-                {data?.atividades?.map((item: any, index: number) => (
-                    <TableRow key={index}><TableCell>{item.diaEstudo}</TableCell><TableCell>{item.datas}</TableCell><TableCell>{item.atividade}</TableCell><TableCell>{item.fichas}</TableCell></TableRow>
-                ))}
-            </TableBody>
-        </Table>
-    </PageWrapper>
-);
-
-const PaginaAnexos = ({ data, codigoEstudo }: { data: any, codigoEstudo?: string }) => {
-    const formulariosDisponiveis = [
-        { id: 'consentimento', label: 'Formulário de Consentimento Livre e Esclarecido (TCLE)' },
-        { id: 'fichaClinica', label: 'Ficha Clínica Individual do Animal' },
-        { id: 'eventoAdverso', label: 'Formulário de Registro de Evento Adverso' },
-        { id: 'administracaoTratamento', label: 'Formulário de Administração de Tratamento' },
-        { id: 'coletaAmostras', label: 'Formulário de Coleta de Amostras Biológicas' },
-        { id: 'avaliacaoClinica', label: 'Formulário de Avaliação de Parâmetros Clínicos' },
-        { id: 'inventarioProdutos', label: 'Formulário de Inventário de Produtos Veterinários' },
-        { id: 'termoAssentimento', label: 'Termo de Assentimento Livre e Esclarecido (TALE)' },
-    ];
-
-    const selecionados = formulariosDisponiveis.filter(form => data?.formularios?.[form.id]);
-
-    return (
-        <PageWrapper codigoEstudo={codigoEstudo}>
-            <SectionTitle number="13." title="ANEXOS - FORMULÁRIOS DE REGISTRO" />
-            <ul className="list-disc pl-5">
-                {selecionados.length > 0 ? selecionados.map(form => <li key={form.id}>{form.label}</li>) : <li>Nenhum formulário selecionado.</li>}
-            </ul>
-        </PageWrapper>
-    );
-};
-
-// --- COMPONENTE PRINCIPAL DE VISUALIZAÇÃO ---
-const VisualizacaoCompletaPDF = () => {
-    const [allData, setAllData] = useState<any>(null);
-    const [scriptsLoaded, setScriptsLoaded] = useState(false);
-    const pdfRef = useRef<HTMLDivElement>(null);
+// --- MAIN PAGE COMPONENT ---
+const ProjetoPage: React.FC = () => {
+    const { id: protocoloMestreId } = useParams<{ id: string }>();
     const navigate = useNavigate();
-
-    const handleGoBack = () => window.history.back();
-    const handleGoHome = () => navigate('/dashboard');
+    const [protocoloData, setProtocoloData] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const pdfRef = useRef<HTMLDivElement>(null);
+    const [scriptsLoaded, setScriptsLoaded] = useState(false);
 
     useEffect(() => {
         const jspdfScript = document.createElement('script');
@@ -304,85 +177,79 @@ const VisualizacaoCompletaPDF = () => {
         };
     }, []);
 
-    // ############# LÓGICA ATUALIZADA #############
     useEffect(() => {
-        // Função auxiliar para buscar dados de outras seções que permanecem em chaves separadas
-        const getLatestEntry = (key: string) => {
-            try {
-                const raw = localStorage.getItem(key);
-                if (!raw) return null;
-                const data = JSON.parse(raw);
-                if (Array.isArray(data)) {
-                    return data.length ? data[data.length - 1] : null;
-                }
-                return data;
-            } catch (e) {
-                console.error(`Erro ao ler ${key} do localStorage:`, e);
-                return null;
+        if (!protocoloMestreId) {
+          setError("ID do protocolo não encontrado.");
+          setIsLoading(false);
+          return;
+        }
+    
+        const fetchProtocoloDetalhes = async () => {
+          setIsLoading(true);
+          setError(null);
+    
+          const apiKey = "2NtzCUDl8Ib2arnDRck0xK8taguGeFYuZqnUzpiZ9Wp-tUZ45--/i=tKxzwTPBvtykMSx!0t?7c/Z?NllkokY=TEC2DSonmOMUu0gxdCeh70/rA2NSsm7Ohjn7VM2BeP";
+          let TOKEN = sessionStorage.getItem("token");
+    
+          if (!TOKEN) {
+            setError("Usuário não autenticado.");
+            setIsLoading(false);
+            navigate("/login");
+            return;
+          }
+          TOKEN = TOKEN.replace(/"/g, '');
+    
+          const API_URL = `https://verita-brgchubha6ceathm.brazilsouth-01.azurewebsites.net/api/protocolo/versao/ativo/detalhes/${protocoloMestreId}`;
+    
+          try {
+            const response = await fetch(API_URL, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${TOKEN}`,
+                "X-API-KEY": apiKey,
+              },
+            });
+    
+            if (!response.ok) {
+              if (response.status === 401 || response.status === 403) {
+                setError("Sessão expirada. Faça o login novamente.");
+                navigate("/login");
+              } else {
+                const errorData = await response.text();
+                throw new Error(`Erro ${response.status}: ${errorData}`);
+              }
+              throw new Error(`Erro ${response.status}`);
             }
+    
+            const data = await response.json();
+            setProtocoloData(data);
+    
+          } catch (err) {
+            console.error("Erro ao carregar detalhes do protocolo:", err);
+            if (err instanceof Error && !error) {
+              setError(err.message);
+            } else if (!error) {
+              setError("Ocorreu um erro desconhecido.");
+            }
+            setProtocoloData(null);
+          } finally {
+            setIsLoading(false);
+          }
         };
-
-        // 1. Busca o objeto principal 'dataRequest' do localStorage
-        const dataRequestRaw = localStorage.getItem('dataRequest');
-        const dataRequest = dataRequestRaw ? JSON.parse(dataRequestRaw) : null;
-
-        // 2. Constrói as estruturas de dados para as props a partir do 'dataRequest'
-        const patrocinador = dataRequest ? {
-            patrocinador: dataRequest.patrocinador,
-            representante: dataRequest.representante,
-            monitores: dataRequest.monitores || [],
-            equipe: dataRequest.tecnicosPatrocinador || [],
-        } : null;
-
-        const instituicao = dataRequest ? {
-            instituicao: dataRequest.instituicao,
-            investigador: dataRequest.investigador,
-            equipeInstituicao: dataRequest.tecnicosInstituicao || [],
-        } : null;
-
-        const protocolo = dataRequest ? {
-            titulo: dataRequest.nome,
-            tipoEstudo: dataRequest.tipoEstudo,
-            especie: dataRequest.especieAnimal,
-            tipoProduto: dataRequest.classeTerapeutica,
-            codigoEstudo: `MESTRE-${dataRequest.protocoloMestreId}-ID-${dataRequest.id}`, // Exemplo de código
-            versaoData: `Versão ${dataRequest.versao} de ${new Date(dataRequest.data_criacao).toLocaleDateString('pt-BR')}`,
-        } : null;
-
-        // 3. Define o estado com os dados montados e busca os dados das outras seções
-        setAllData({
-            patrocinador,
-            instituicao,
-            protocolo,
-            // Mantém a busca para as outras seções que não estão no dataRequest
-            local: getLatestEntry('dataLocal'),
-            introducao: getLatestEntry('dadosIntroducao'),
-            objetivo: getLatestEntry('dadosObjetivo'),
-            justificativa: getLatestEntry('dadosJustificativa'),
-            requisito: getLatestEntry('dadosRequisito'),
-            materialMetodo: getLatestEntry('dadosMaterialMetodo'),
-            analiseEstatistica: getLatestEntry('dadosEstatistica'),
-            saude: getLatestEntry('dadosSaude'),
-            eventoAdverso: getLatestEntry('dadosEventoAdverso'),
-            concomitante: getLatestEntry('dadosConcomitante'),
-            eutanasia: getLatestEntry('dadosEutanasia'),
-            registro: getLatestEntry('dadosRegistro'),
-            cronograma: getLatestEntry('dadosCronograma'),
-            anexos: getLatestEntry('dadosAnexos'),
-            bibliografia: getLatestEntry('dadosBibliografia'),
-        });
-    }, []);
-    // ############# FIM DA LÓGICA ATUALIZADA #############
-
+    
+        fetchProtocoloDetalhes();
+    }, [protocoloMestreId, navigate]);
 
     const handleExportPdf = async () => {
         const content = pdfRef.current;
-        if (!content || !window.jspdf || !window.html2canvas) {
+        const windowRef = window as any;
+        if (!content || !windowRef.jspdf || !windowRef.html2canvas) {
              console.error("Bibliotecas de geração de PDF não carregadas.");
              return;
         }
-        const { jsPDF } = window.jspdf;
-        const html2canvas = window.html2canvas;
+        const { jsPDF } = windowRef.jspdf;
+        const html2canvas = windowRef.html2canvas;
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pages = content.querySelectorAll('.page-wrapper-pdf');
         for (let i = 0; i < pages.length; i++) {
@@ -396,62 +263,65 @@ const VisualizacaoCompletaPDF = () => {
         }
         pdf.save('protocolo_completo.pdf');
     };
-
-    if (!allData) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
-                <p>Carregando dados...</p>
-                <Button onClick={handleGoBack} className="mt-4">Voltar</Button>
-            </div>
-        );
+    
+    if (isLoading) {
+        return <div className="min-h-screen flex items-center justify-center">Carregando dados do protocolo...</div>;
     }
+
+    if (error) {
+        return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
+    }
+
+    if (!protocoloData) {
+        return <div className="min-h-screen flex items-center justify-center">Nenhum dado encontrado para este protocolo.</div>;
+    }
+
+    const codigoEstudo = `MESTRE-${protocoloData.protocoloMestreId}-ID-${protocoloData.id}`;
+    const versaoData = `Versão ${protocoloData.versao} de ${new Date(protocoloData.data_criacao).toLocaleDateString('pt-BR')}`;
 
     return (
         <div>
-             <div className="p-4 bg-white shadow-md sticky top-0 z-10 flex justify-between items-center">
-                <Button variant="outline" onClick={handleGoBack}>
+            <div className="p-4 bg-white shadow-md sticky top-0 z-10 flex justify-between items-center">
+                <Button variant="outline" onClick={() => navigate(-1)}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Voltar
                 </Button>
                 <h1 className="text-xl font-bold">Visualização do Protocolo Final</h1>
                 <div className="flex items-center gap-2">
-                     <Button variant="outline" onClick={handleGoHome}>
-                         <Home className="h-4 w-4 mr-2" />
-                         Home
-                     </Button>
+                    <Button variant="outline" onClick={() => navigate('/dashboard')}>
+                        <Home className="h-4 w-4 mr-2" />
+                        Home
+                    </Button>
                     <Button onClick={handleExportPdf} className="bg-green-500 hover:bg-green-600" disabled={!scriptsLoaded}>
                         {scriptsLoaded ? <><Download className="h-4 w-4 mr-2" />Baixar PDF</> : 'Carregando...'}
                     </Button>
                 </div>
-             </div>
-             <div ref={pdfRef} className="py-8 flex flex-col items-center gap-8 bg-gray-200">
-                <Capa data={allData} />
-                <PaginaAssinaturas dadosPatrocinador={allData.patrocinador} dadosInstituicao={allData.instituicao} codigoEstudo={allData.protocolo?.codigoEstudo} />
-                <PaginaInformacoesGerais allData={allData} codigoEstudo={allData.protocolo?.codigoEstudo} />
-                <PaginaConteudoSimples numero="2" titulo="INTRODUÇÃO" data={allData.introducao} fieldName="conteudoIntroducao" codigoEstudo={allData.protocolo?.codigoEstudo} />
-                <PaginaConteudoSimples numero="3" titulo="OBJETIVO" data={allData.objetivo} fieldName="conteudoObjetivo" codigoEstudo={allData.protocolo?.codigoEstudo} />
-                <PaginaConteudoSimples numero="4" titulo="JUSTIFICATIVA" data={allData.justificativa} fieldName="conteudoJustificativa" codigoEstudo={allData.protocolo?.codigoEstudo} />
-                <PaginaMaterialMetodoPt1 data={allData.materialMetodo} codigoEstudo={allData.protocolo?.codigoEstudo} />
-                <PaginaMaterialMetodoPt2 data={allData.materialMetodo} codigoEstudo={allData.protocolo?.codigoEstudo} />
-                <PaginaConteudoSimples numero="6" titulo="ANÁLISE ESTATÍSTICA" data={allData.analiseEstatistica} fieldName="conteudoEstatistica" codigoEstudo={allData.protocolo?.codigoEstudo} />
-                <PaginaConteudoSimples numero="7" titulo="OBSERVAÇÃO GERAL DE SAÚDE" data={allData.saude} fieldName="conteudoSaude" codigoEstudo={allData.protocolo?.codigoEstudo} />
-                <PaginaConteudoSimples numero="8" titulo="EVENTO ADVERSO" data={allData.eventoAdverso} fieldName="conteudoEventoAdverso" codigoEstudo={allData.protocolo?.codigoEstudo} />
-                <PaginaConteudoSimples numero="9" titulo="EUTANÁSIA" data={allData.eutanasia} fieldName="conteudoEutanasia" codigoEstudo={allData.protocolo?.codigoEstudo} />
-                <PaginaConteudoSimples numero="10" titulo="MEDICAÇÃO CONCOMITANTE" data={allData.concomitante} fieldName="conteudoConcomitante" codigoEstudo={allData.protocolo?.codigoEstudo} />
-                <PaginaConteudoSimples numero="11" titulo="REGISTRO E ARQUIVAMENTO DE DADOS" data={allData.registro} fieldName="conteudoRegistro" codigoEstudo={allData.protocolo?.codigoEstudo} />
-                {allData.cronograma && <PaginaCronograma data={allData.cronograma} codigoEstudo={allData.protocolo?.codigoEstudo} />}
-                {allData.anexos && <PaginaAnexos data={allData.anexos} codigoEstudo={allData.protocolo?.codigoEstudo} />}
-                <PaginaConteudoSimples numero="14" titulo="REFERÊNCIAS BIBLIOGRÁFICAS" data={allData.bibliografia} fieldName="conteudoBibliografia" codigoEstudo={allData.protocolo?.codigoEstudo} />
-             </div>
+            </div>
+            <div ref={pdfRef} className="py-8 flex flex-col items-center gap-8 bg-gray-200">
+                <Capa data={protocoloData} codigoEstudo={codigoEstudo} versaoData={versaoData} />
+                <PaginaAssinaturas data={protocoloData} codigoEstudo={codigoEstudo} />
+                <PaginaInformacoesGerais data={protocoloData} codigoEstudo={codigoEstudo} />
+                <PaginaConteudoSimples numero="2" titulo="INTRODUÇÃO" data={protocoloData.introducao} fieldName="conteudo" codigoEstudo={codigoEstudo} />
+                <PaginaConteudoSimples numero="3" titulo="OBJETIVO" data={protocoloData.objetivo} fieldName="conteudo" codigoEstudo={codigoEstudo} />
+                <PaginaConteudoSimples numero="4" titulo="JUSTIFICATIVA" data={protocoloData.justificativa} fieldName="conteudo" codigoEstudo={codigoEstudo} />
+                {/* As seções abaixo serão renderizadas com "Conteúdo não informado" se não vierem da API */}
+                <PaginaConteudoSimples numero="5" titulo="REQUISITOS REGULAMENTARES" data={protocoloData.requisitosRegulamentares} fieldName="conteudo" codigoEstudo={codigoEstudo} />
+                {/* Adicione outras seções aqui conforme os dados estiverem disponíveis na API */}
+                {/* <PaginaMaterialMetodoPt1 data={protocoloData.materialMetodo} codigoEstudo={codigoEstudo} /> */}
+                {/* <PaginaMaterialMetodoPt2 data={protocoloData.materialMetodo} codigoEstudo={codigoEstudo} /> */}
+                <PaginaConteudoSimples numero="6" titulo="ANÁLISE ESTATÍSTICA" data={protocoloData.analiseEstatistica} fieldName="conteudo" codigoEstudo={codigoEstudo} />
+                <PaginaConteudoSimples numero="7" titulo="OBSERVAÇÃO GERAL DE SAÚDE" data={protocoloData.observacao} fieldName="conteudo" codigoEstudo={codigoEstudo} />
+                <PaginaConteudoSimples numero="8" titulo="EVENTO ADVERSO" data={protocoloData.eventoAdverso} fieldName="conteudo" codigoEstudo={codigoEstudo} />
+                <PaginaConteudoSimples numero="9" titulo="EUTANÁSIA" data={protocoloData.eutanasia} fieldName="conteudo" codigoEstudo={codigoEstudo} />
+                <PaginaConteudoSimples numero="10" titulo="MEDICAÇÃO CONCOMITANTE" data={protocoloData.concomitante} fieldName="conteudo" codigoEstudo={codigoEstudo} />
+                <PaginaConteudoSimples numero="11" titulo="REGISTRO E ARQUIVAMENTO DE DADOS" data={protocoloData.registro} fieldName="conteudo" codigoEstudo={codigoEstudo} />
+                {/* {protocoloData.cronograma && <PaginaCronograma data={protocoloData.cronograma} codigoEstudo={codigoEstudo} />} */}
+                {/* {protocoloData.anexos && <PaginaAnexos data={protocoloData.anexos} codigoEstudo={codigoEstudo} />} */}
+                <PaginaConteudoSimples numero="14" titulo="REFERÊNCIAS BIBLIOGRÁFICAS" data={protocoloData.bibliografia} fieldName="conteudo" codigoEstudo={codigoEstudo} />
+            </div>
         </div>
     );
 };
 
-const App = () => (
-    <Routes>
-        <Route path="*" element={<VisualizacaoCompletaPDF />} />
-    </Routes>
-);
+export default ProjetoPage;
 
-
-export default App;
