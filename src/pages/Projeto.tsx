@@ -159,7 +159,7 @@ const ProjetoPage: React.FC = () => {
             <VersaoCard 
               key={versao.id} 
               versao={versao} 
-              onClick={() => navigate(`/protocolo-final/${protocoloMestreId}`)} 
+              onClick={() => navigate(`/introducao/${protocoloMestreId}`)} 
             />
           ) : (
              <div className="col-span-full text-center text-gray-500 py-12">

@@ -387,12 +387,10 @@ const LocalProtocol = () => {
         const data = await response.json().catch(() => ({}));
         console.log("Protocolo criado com sucesso:", data);
 
-      // Salva os dados do formulário como 'dataLocal'
       localStorage.setItem("dataLocal", JSON.stringify([formData]));
-      // Salva o retorno da API como 'dataRequest'
       localStorage.setItem("dataRequest", JSON.stringify(data));
 
-        navigate("/introducao");
+        navigate("/dashboard");
       } else {
         let errorText = "";
         try {

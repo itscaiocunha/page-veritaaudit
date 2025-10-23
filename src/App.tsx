@@ -89,7 +89,7 @@ const App = () => (
           <Route path="/protocolo/instituicao"  element={<DataInstituicao />}/>
           <Route path="/protocolo/local"  element={<LocalProtocol />}/>
           
-          <Route path="/introducao" element={<FormularioIntroducao/>}/> //2
+          <Route path="/introducao/:id" element={<FormularioIntroducao/>}/> //2
           <Route path="/objetivo" element={<FormularioObservacao/>}/> //3
           <Route path="/justificativa" element={<FormularioJustificativa/>}/> //4
           <Route path="/requisitos" element={<FormularioRequisitos/>}/> //5
