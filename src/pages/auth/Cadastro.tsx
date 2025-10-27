@@ -204,7 +204,6 @@ const Cadastro = () => {
         },
         empresa: {
           cnpj: data.cnpj.replace(/\D/g, ''),
-          razaoSocial: data.razaoSocial || "Não Informado",
           tipoEmpresa: data.tipoEmpresa,
           relacaoEmpresa: data.relacaoEmpresa || null,
         }

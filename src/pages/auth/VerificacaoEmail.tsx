@@ -107,7 +107,7 @@ const ValidarEmail = () => {
         toast.success("E-mail validado com sucesso!");
         setValue("");
         setAttempts(0);
-        navigate('/verificacao-sms');
+        navigate('/verificacao/sms');
       } else {
         setAttempts(prev => prev + 1);
         const remainingAttempts = 3 - attempts - 1;

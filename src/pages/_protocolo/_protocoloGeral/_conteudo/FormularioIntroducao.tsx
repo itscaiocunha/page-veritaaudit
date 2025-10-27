@@ -14,14 +14,15 @@ import { Info, Loader2, ChevronLeft, AlertCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 
-// --- Schema (Sem alterações) ---
+// --- Schema (MODIFICADO) ---
 const validationSchema = yup.object({
   conteudoIntroducao: yup.string().required("Este campo é obrigatório."),
+  palavrasChaves: yup.string().optional(), // NOVO CAMPO
 });
 
 type FormValues = yup.InferType<typeof validationSchema>;
 
-// --- Instruções (Completo) ---
+// --- Instruções (Sem alterações) ---
 const instrucoes = (
   <div className="text-left">
     <p className="font-semibold mb-2">A introdução deve conter:</p>
@@ -48,6 +49,11 @@ const instrucoes = (
       </li>
     </ul>
   </div>
+);
+
+// --- NOVO: Instruções para Palavras-Chave ---
+const instrucoesPalavrasChave = (
+  <p>Separe as palavras-chave por vírgulas (ex: "Protocolo, Teste, Animal").</p>
 );
 
 // --- Componente de Header (Sem alterações) ---
@@ -95,10 +101,11 @@ const FormularioIntroducao = () => {
     getValues,
   } = useForm<FormValues>({
     resolver: yupResolver(validationSchema),
-    defaultValues: { conteudoIntroducao: "" },
+    // MODIFICADO: Adicionado default para o novo campo
+    defaultValues: { conteudoIntroducao: "", palavrasChaves: "" },
   });
 
-  // useEffect para carregar dados
+  // useEffect para carregar dados (MODIFICADO)
   useEffect(() => {
     const storageKey = `dadosIntroducao_${protocoloMestreId || "draft"}`;
 
@@ -150,7 +157,8 @@ const FormularioIntroducao = () => {
           } else if (response.status === 404) {
             console.warn("Nenhuma versão ativa encontrada (404), limpando.");
             localStorage.removeItem(storageKey);
-            reset({ conteudoIntroducao: "" });
+            // MODIFICADO: Resetar ambos os campos
+            reset({ conteudoIntroducao: "", palavrasChaves: "" });
             setError("Nenhuma versão ativa encontrada para este protocolo.");
             return;
           } else {
@@ -160,7 +168,10 @@ const FormularioIntroducao = () => {
         }
 
         const data = await response.json();
+        
+        // MODIFICADO: Buscar os dois campos da API
         const conteudoApi = data.introducao?.conteudo;
+        const palavrasChavesApi = data.introducao?.palavrasChaves; // Assumindo este caminho
         const versaoIdApi = data.id;
 
         if (versaoIdApi) {
@@ -169,13 +180,18 @@ const FormularioIntroducao = () => {
           console.warn("API não retornou um 'id' para a versão do protocolo.");
         }
 
-        if (conteudoApi) {
-          const dadosApi = { conteudoIntroducao: conteudoApi };
+        if (conteudoApi || palavrasChavesApi) {
+          // MODIFICADO: Criar objeto com ambos os campos
+          const dadosApi = {
+            conteudoIntroducao: conteudoApi || "",
+            palavrasChaves: palavrasChavesApi || "",
+          };
           localStorage.setItem(storageKey, JSON.stringify([dadosApi]));
           reset(dadosApi);
         } else {
           localStorage.removeItem(storageKey);
-          reset({ conteudoIntroducao: "" });
+          // MODIFICADO: Resetar ambos os campos
+          reset({ conteudoIntroducao: "", palavrasChaves: "" });
         }
       } catch (err) {
         console.error("Erro ao carregar versão do protocolo:", err);
@@ -199,7 +215,7 @@ const FormularioIntroducao = () => {
     fetchVersaoAtiva();
   }, [protocoloMestreId, navigate, reset]);
 
-  // --- Função: Salvar na API (Corrigida) ---
+  // --- Função: Salvar na API (MODIFICADO) ---
   const handleSaveApi = async (data: FormValues) => {
     if (!protocoloVersaoId) {
       setError("Não é possível salvar, ID da versão do protocolo não encontrado.");
@@ -214,10 +230,11 @@ const FormularioIntroducao = () => {
 
     const API_URL = `https://verita-brgchubha6ceathm.brazilsouth-01.azurewebsites.net/api/protocolo/versao/introducao`;
 
-    // A API espera "idProtocolo"
+    // MODIFICADO: Adicionado 'palavrasChaves' ao body
     const body = {
-      idProtocolo: protocoloVersaoId, // Chave renomeada
+      idProtocolo: protocoloVersaoId,
       conteudo: data.conteudoIntroducao,
+      palavrasChaves: data.palavrasChaves, // NOVO
     };
 
     try {
@@ -243,7 +260,6 @@ const FormularioIntroducao = () => {
         }
       }
 
-      // Se a resposta for OK, parseia o JSON para pegar o novo ID
       const responseData = await response.json();
       const novoProtocoloVersaoId = responseData.id;
 
@@ -343,7 +359,10 @@ const FormularioIntroducao = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* // MODIFICADO: Adicionado 'space-y-8' para espaçar os campos */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8"> 
+            
+            {/* --- CAMPO CONTEÚDO INTRODUÇÃO --- */}
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Label
@@ -383,7 +402,48 @@ const FormularioIntroducao = () => {
               </p>
             </div>
 
-            {/* --- SEÇÃO DE BOTÕES --- */}
+            {/* --- NOVO: CAMPO PALAVRAS-CHAVE --- */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Label
+                  htmlFor="palavrasChaves"
+                  className="text-base font-semibold text-gray-700"
+                >
+                  Palavras-Chave
+                </Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-gray-500 cursor-pointer" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      {instrucoesPalavrasChave}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+
+              <div className="relative">
+                {isDataLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-md z-10">
+                    <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
+                  </div>
+                )}
+                <Textarea
+                  id="palavrasChaves"
+                  {...register("palavrasChaves")}
+                  className="min-h-[100px] mt-1 bg-white" // Altura menor
+                  disabled={isDataLoading}
+                  placeholder="Ex: Protocolo, Teste, Animal, ..."
+                />
+              </div>
+
+              <p className="text-red-500 text-sm mt-1">
+                {errors.palavrasChaves?.message}
+              </p>
+            </div>
+
+            {/* --- SEÇÃO DE BOTÕES (Sem alterações) --- */}
             <div className="flex justify-between items-center pt-6 border-t border-gray-200">
               {/* BOTÃO VOLTAR */}
               <Button

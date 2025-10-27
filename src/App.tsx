@@ -80,7 +80,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
 
           // Home
-          <Route path="/dashboard" element={<Dashboard formData={{ name: "Admin" }} />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/projeto/:id" element={<ProjetoPage/>} />
 
           // Protocolo Geral
@@ -100,7 +100,7 @@ const App = () => (
           <Route path="/medicacao-concomitante" element={<FormularioConcomitante/>}/> //10
           <Route path="/eutanasia" element={<FormularioEutanasia/>}/> //11
           <Route path="/cronograma" element={<FormularioCronograma/>}/> //12
-          <Route path="/anexos" element={<FormularioAnexos/>}/> //13
+          <Route path="/anexos/:id" element={<FormularioAnexos/>}/> //13
           <Route path="/bibliografia" element={<FormularioBibliografia/>}/> //14
           <Route path="/protocolo-final/:id" element={<VisualizacaoCompletaPDF/>}/>
 
