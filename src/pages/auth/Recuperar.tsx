@@ -29,13 +29,36 @@ const RecuperarSenha = () => {
   });
 
   const onSubmit = async (data: FormData) => {
+    // Define o payload que será enviado
+    const payload = { email: data.email };
+    
+    // --- API KEY E HEADERS ADICIONADOS ---
+    const apiKey = "2NtzCUDl8Ib2arnDRck0xK8taguGeFYuZqnUzpiZ9Wp-tUZ45--/i=tKxzwTPBvtykMSx!0t?7c/Z?NllkokY=TEC2DSonmOMUu0gxdCeh70/rA2NSsm7Ohjn7VM2BeP";
+    
+    const config = {
+      headers: {
+        "X-API-KEY": apiKey,
+        "Content-Type": "application/json",
+      },
+    };
+    // --- FIM DA ADIÇÃO ---
+
     try {
       setLoading(true);
-      await axios.post("/auth/forgot-password", { email: data.email });
+
+      // --- CHAMADA AXIOS ATUALIZADA ---
+      await axios.post(
+        "https://verita-brgchubha6ceathm.brazilsouth-01.azurewebsites.net/api/user/recuperar-senha",
+        payload, // 1. Data
+        config   // 2. Config (com headers)
+      );
+      // --- FIM DA ATUALIZAÇÃO ---
+
       toast.success("Código enviado para o e-mail informado.");
       reset();
     } catch (err: any) {
       toast.error("Erro ao enviar código. Verifique o e-mail.");
+      console.error("Falha na chamada da API:", err.response || err.message);
     } finally {
       setLoading(false);
     }
@@ -45,9 +68,9 @@ const RecuperarSenha = () => {
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Imagem visível apenas em mobile */}
       <div className="md:hidden w-full flex justify-center pt-8">
-        <img 
+        <img
           src="/images/esqueceu.png"
-          alt="Esqueceu" 
+          alt="Esqueceu"
           className="object-contain"
         />
       </div>
@@ -60,7 +83,7 @@ const RecuperarSenha = () => {
         >
           <div className="text-center space-y-2 mb-8">
             <h1 className="text-3xl font-semibold mb-6">Esqueceu sua senha?</h1>
-            <p className="text-gray-600">Digite seu e-mail cadastrado</p>            
+            <p className="text-gray-600">Digite seu e-mail cadastrado</p>
           </div>
 
           <div className="relative">
@@ -72,7 +95,9 @@ const RecuperarSenha = () => {
               {...register("email")}
             />
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
@@ -80,14 +105,19 @@ const RecuperarSenha = () => {
             type="submit"
             disabled={!isValid || loading}
             className={`w-full py-6 text-white font-bold ${
-              isValid ? "bg-[#90EE90] hover:bg-[#90EE90]" : "bg-gray-400 cursor-not-allowed"
+              isValid
+                ? "bg-[#90EE90] hover:bg-[#90EE90]"
+                : "bg-gray-400 cursor-not-allowed"
             }`}
           >
             {loading ? "Enviando..." : "Enviar Código"}
           </Button>
 
           <div className="text-center space-y-2">
-            <Link to="/login" className="text-sm text-[#90EE90] hover:underline block">
+            <Link
+              to="/login"
+              className="text-sm text-[#90EE90] hover:underline block"
+            >
               Voltar ao login!
             </Link>
           </div>
@@ -97,13 +127,13 @@ const RecuperarSenha = () => {
       {/* Imagem visível apenas em desktop */}
       <div
         className="hidden md:flex w-1/2 justify-center items-center"
-        style={{ 
-          background: "linear-gradient(to bottom left, #90EE90 50%, white 50%)" 
+        style={{
+          background: "linear-gradient(to bottom left, #90EE90 50%, white 50%)",
         }}
       >
-        <img 
-          src="/images/esqueceu.png" 
-          alt="Login" 
+        <img
+          src="/images/esqueceu.png"
+          alt="Login"
           className="max-h-[80vh] w-auto object-contain"
         />
       </div>

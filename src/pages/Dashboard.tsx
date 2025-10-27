@@ -6,18 +6,12 @@ import { Sidebar } from "../components/Sidebar";
 
 export type PageType = "home" | "projects" | "universities" | "labs" | "profile";
 
-interface DashboardProps {
-  formData?: { name?: string };
-}
-
-// ATUALIZADO: Interface reflete os dados da API
 interface Protocolo {
   id: number;
   codigo: string;
-  dataCriacao: string; // Vem como "AAAA-MM-DD"
+  dataCriacao: string;
 }
 
-/* Helpers */
 const getInitials = (text?: string) => {
   if (!text) return "";
   return text
@@ -27,7 +21,6 @@ const getInitials = (text?: string) => {
     .slice(0, 2);
 };
 
-// NOVO: Helper para formatar a data
 const formatarData = (isoDate: string) => {
   if (!isoDate) return "Data desconhecida";
   try {
@@ -35,7 +28,7 @@ const formatarData = (isoDate: string) => {
     return `${dia}/${mes}/${ano}`;
   } catch (e) {
     console.error("Erro ao formatar data:", isoDate, e);
-    return isoDate; // fallback
+    return isoDate;
   }
 };
 
@@ -68,13 +61,21 @@ const ProtocoloCard: React.FC<{ protocolo: Protocolo; onClick: () => void }> = (
 };
 
 /* Dashboard */
-const Dashboard: React.FC<DashboardProps> = ({ formData }) => {
+const Dashboard: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageType>("home");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [protocolos, setProtocolos] = useState<Protocolo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedName = localStorage.getItem("nome");
+    if (storedName) {
+      setUserName(storedName);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchProtocolos = async () => {
@@ -164,7 +165,7 @@ const Dashboard: React.FC<DashboardProps> = ({ formData }) => {
             </button>
 
             <h2 className="text-xl lg:text-2xl font-bold text-gray-800">
-              Bem-vindo(a), {formData?.name || "Usuário"}
+              Bem-vindo(a), {userName || "Usuário"}
             </h2>
 
             <div className="flex items-center space-x-4">

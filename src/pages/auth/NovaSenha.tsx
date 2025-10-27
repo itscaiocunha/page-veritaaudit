@@ -6,9 +6,11 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { toast } from "react-toastify";
-import { useNavigate, useParams } from "react-router-dom";
+// --- ALTERAÇÃO NA IMPORTAÇÃO ---
+import { useNavigate, useSearchParams } from "react-router-dom"; // Trocado useParams por useSearchParams
 import axios from "axios";
 
+// --- Schema (Sem alterações) ---
 const schema = yup.object({
   password: yup.string()
     .required("Senha é obrigatória")
@@ -27,7 +29,12 @@ type FormData = yup.InferType<typeof schema>;
 const NovaSenha = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { token } = useParams();
+
+  // --- ALTERAÇÃO NA LEITURA DO TOKEN ---
+  // Substitui o useParams
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token"); // Pega o valor do parâmetro 'token' da URL
+  // --- FIM DA ALTERAÇÃO ---
 
   const {
     register,
@@ -40,14 +47,45 @@ const NovaSenha = () => {
     mode: "onChange"
   });
 
+  // --- Função onSubmit (Atualizada com API Key) ---
   const onSubmit = async (data: FormData) => {
+    
+    const apiKey = "2NtzCUDl8Ib2arnDRck0xK8taguGeFYuZqnUzpiZ9Wp-tUZ45--/i=tKxzwTPBvtykMSx!0t?7c/Z?NllkokY=TEC2DSonmOMUu0gxdCeh70/rA2NSsm7Ohjn7VM2BeP";
+    
+    const config = {
+      headers: {
+        "X-API-KEY": apiKey,
+        "Content-Type": "application/json",
+      },
+    };
+
     try {
-      await axios.patch(`/auth/reset-password/${token}`, { password: data.password });
+      const apiUrl = "https://verita-brgchubha6ceathm.brazilsouth-01.azurewebsites.net/api/user/salvar-senha";
+
+      const requestBody = {
+        token: token,         // Este 'token' agora vem do useSearchParams
+        senha: data.password
+      };
+
+      console.log("Enviando requisição para /api/user/salvar-senha");
+      console.log("Payload:", requestBody);
+      console.log("Headers:", config.headers);
+      
+      // Verifica se o token foi lido corretamente
+      if (!token) {
+        toast.error("Token não encontrado na URL. Verifique o link.");
+        return; // Interrompe a execução se não houver token
+      }
+
+      await axios.post(apiUrl, requestBody, config);
+      
       toast.success("Senha redefinida com sucesso!");
       reset();
       setTimeout(() => navigate("/login"), 2000);
-    } catch (err) {
-      toast.error("Erro ao redefinir a senha.");
+
+    } catch (err: any) {
+      toast.error("Erro ao redefinir a senha. O link pode ter expirado.");
+      console.error("Falha na chamada da API:", err.response || err.message);
     }
   };
 
@@ -123,6 +161,7 @@ const NovaSenha = () => {
   );
 };
 
+// --- Componente Auxiliar (Sem alterações) ---
 const PasswordRequirement = ({ isValid, text, hasValue }: { isValid: boolean, text: string, hasValue: boolean }) => {
   if (!hasValue) {
     return <div className="text-gray-400 text-sm">{text}</div>;

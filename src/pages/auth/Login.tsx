@@ -82,6 +82,8 @@ const Login = () => {
         senha: data.password,
         // captcha: captchaVerified
       });
+
+      const { token, nome } = response.data;
     
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', data.email);
@@ -89,7 +91,11 @@ const Login = () => {
         localStorage.removeItem('rememberedEmail');
       }
     
-      sessionStorage.setItem('token', response.data.token);
+      sessionStorage.setItem('token', token);
+
+      if (nome) {
+        localStorage.setItem('nome', nome);
+      }
         
       navigate('/dashboard', { replace: true });
 

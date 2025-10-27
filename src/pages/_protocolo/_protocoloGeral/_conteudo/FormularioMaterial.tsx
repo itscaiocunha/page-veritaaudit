@@ -143,7 +143,7 @@ const FormularioMaterialMetodo = () => {
 
         await new Promise((resolve) => setTimeout(resolve, 500));
         setIsSubmitting(false);
-        navigate("/estatistica");
+        navigate("/estatistica/90");
     };
 
     return (

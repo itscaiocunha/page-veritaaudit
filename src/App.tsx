@@ -90,12 +90,12 @@ const App = () => (
           <Route path="/protocolo/local"  element={<LocalProtocol />}/>
           
           <Route path="/introducao/:id" element={<FormularioIntroducao/>}/> //2
-          <Route path="/objetivo" element={<FormularioObservacao/>}/> //3
-          <Route path="/justificativa" element={<FormularioJustificativa/>}/> //4
-          <Route path="/requisitos" element={<FormularioRequisitos/>}/> //5
-          <Route path="/material-metodo" element={<FormularioMetodo/>}/> //6
-          <Route path="/estatistica" element={<FormularioEstatistica/>}/> //7
-          <Route path="/saude" element={<FormularioSaude/>}/> //8
+          <Route path="/objetivo/:id" element={<FormularioObservacao/>}/> //3
+          <Route path="/justificativa/:id" element={<FormularioJustificativa/>}/> //4
+          <Route path="/requisitos/:id" element={<FormularioRequisitos/>}/> //5
+          <Route path="/material-metodo/:id" element={<FormularioMetodo/>}/> //6
+          <Route path="/estatistica/:id" element={<FormularioEstatistica/>}/> //7
+          <Route path="/saude/:id" element={<FormularioSaude/>}/> //8
           <Route path="/evento" element={<FormularioEventoAdverso/>}/> //9
           <Route path="/medicacao-concomitante" element={<FormularioConcomitante/>}/> //10
           <Route path="/eutanasia" element={<FormularioEutanasia/>}/> //11

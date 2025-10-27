@@ -317,7 +317,7 @@ const FormularioIntroducao = () => {
         await handleSaveLocalStorage(data);
       }
 
-      navigate("/objetivo");
+      navigate(`/objetivo/${protocoloMestreId}`);
     } catch (error) {
       console.error("Falha ao salvar e avançar:", error);
     } finally {
@@ -420,7 +420,6 @@ const FormularioIntroducao = () => {
                   )}
                 </Button>
 
-                {/* BOTÃO SALVAR E AVANÇAR (SUBMIT) */}
                 <Button
                   type="submit"
                   className="bg-[#90EE90] hover:bg-[#7CCD7C] text-green-950 font-bold px-8 py-3 text-lg h-auto rounded-md transition-colors duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
