@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 // --- Schema de Validação ---
@@ -34,6 +34,7 @@ const newEmptyActivity = {
 
 const FormularioCronograma = () => {
   const navigate = useNavigate(); // Removido para corrigir o erro
+  const { id: protocoloMestreId } = useParams<{ id: string }>();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register, control, handleSubmit, formState: { errors }, reset } = useForm<FormValues>({
@@ -68,7 +69,7 @@ const FormularioCronograma = () => {
 
     await new Promise((resolve) => setTimeout(resolve, 500));
     setIsSubmitting(false);
-    navigate("/anexos");
+    navigate("/anexos/90"); 
   };
 
   return (
