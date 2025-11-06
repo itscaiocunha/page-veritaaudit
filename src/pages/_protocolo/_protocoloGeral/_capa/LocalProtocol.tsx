@@ -361,9 +361,7 @@ const LocalProtocol = () => {
         etapaClinica: activeSections.clinica ? transformClinicaData(formData.etapasClinicas) : [],
         etapaLaboratorial: activeSections.laboratorial ? transformLaboratorialData(formData.etapasLaboratoriais) : [],
         etapaEstatistica: activeSections.estatistica ? transformEstatisticaData(formData.etapasEstatisticas) : [],
-      };
-
-      console.log("JSON Body Enviado:", JSON.stringify(payload, null, 2));
+      };      
 
       // 3) chamada API
       const jwtToken = sessionStorage.getItem("token");
@@ -385,7 +383,6 @@ const LocalProtocol = () => {
 
       if (response.ok) {
         const data = await response.json().catch(() => ({}));
-        console.log("Protocolo criado com sucesso:", data);
 
       localStorage.setItem("dataLocal", JSON.stringify([formData]));
       localStorage.setItem("dataRequest", JSON.stringify(data));

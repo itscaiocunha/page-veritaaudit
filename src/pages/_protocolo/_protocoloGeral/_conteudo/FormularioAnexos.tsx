@@ -294,9 +294,7 @@ const FormularioAnexos = () => {
         const savedIntroData = JSON.parse(localStorage.getItem(introStorageKey) || "null");
 
         if (savedIntroData && Array.isArray(savedIntroData) && savedIntroData.length > 0) {
-            // Pega o último item salvo
             palavrasChavesString = savedIntroData[savedIntroData.length - 1].palavrasChaves || "";
-            console.log("Palavras-chave carregadas do Local Storage:", palavrasChavesString);
         }
       } catch (e) {
         console.warn("Não foi possível ler palavras-chave do Local Storage.", e);
@@ -304,7 +302,6 @@ const FormularioAnexos = () => {
 
       // --- PASSO 2: SE NÃO ACHOU, TENTAR API (PLANO B) ---
       if (!palavrasChavesString) {
-        console.log("Palavras-chave não encontradas no Local Storage. Tentando API...");
         try {
           const apiKey = "2NtzCUDl8Ib2arnDRck0xK8taguGeFYuZqnUzpiZ9Wp-tUZ45--/i=tKxzwTPBvtykMSx!0t?7c/Z?NllkokY=TEC2DSonmOMUu0gxdCeh70/rA2NSsm7Ohjn7VM2BeP";
           let TOKEN = sessionStorage.getItem("token");
@@ -331,10 +328,8 @@ const FormularioAnexos = () => {
           }
 
           const data = await response.json();
-          console.log("Resposta da API (/detalhes/):", data); 
           
           palavrasChavesString = data.introducao?.palavrasChaves || "";
-          console.log("Palavras-chave carregadas da API:", palavrasChavesString);
 
         } catch (err) {
           console.error("Erro ao filtrar formulários:", err);
@@ -353,8 +348,6 @@ const FormularioAnexos = () => {
         .split(/[,;]/) // <-- CORREÇÃO: Aceita vírgula E ponto-e-vírgula
         .map((k) => k.trim().toLowerCase())
         .filter((k) => k.length > 0);
-      
-      console.log("Keywords processadas:", userKeywords); 
 
       // Lógica de filtragem
       const formulariosFiltrados = ALL_PROTOCOL_FORMS.filter((form) => {
@@ -384,7 +377,6 @@ const FormularioAnexos = () => {
   // --- Submissão ---
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
-    console.log("Formulários Selecionados:", data);
     const storageKey = `dadosAnexos_${protocoloMestreId || "draft"}`;
 
     try {
@@ -453,13 +445,6 @@ const FormularioAnexos = () => {
                         <p className="text-gray-500 text-center">Nenhum formulário sugerido com base nas palavras-chave. Verifique as tags.</p>
                     )}
                 </div>
-            )}
-            
-            {/* Exibição do Erro de Validação */}
-            {errors.formularios && (
-                 <p className="text-red-500 text-sm mt-2">
-                    {errors.formularios.message}
-                 </p>
             )}
           </div>
 

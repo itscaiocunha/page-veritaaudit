@@ -12,8 +12,6 @@ export const CameraModal = ({ isOpen, onClose, onPictureTaken }: CameraModalProp
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
-
-  console.log("Componente CameraModal renderizou. Prop 'isOpen' é:", isOpen);
   
   useEffect(() => {
     // Função para iniciar a câmera

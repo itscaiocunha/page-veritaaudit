@@ -66,10 +66,6 @@ const NovaSenha = () => {
         token: token,         // Este 'token' agora vem do useSearchParams
         senha: data.password
       };
-
-      console.log("Enviando requisição para /api/user/salvar-senha");
-      console.log("Payload:", requestBody);
-      console.log("Headers:", config.headers);
       
       // Verifica se o token foi lido corretamente
       if (!token) {

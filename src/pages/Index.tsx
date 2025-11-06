@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
  * @see RF22 - Usabilidade
  * @see RF24 - Acessibilidade
  */
+
 const Index = () => {
   return (
     <>

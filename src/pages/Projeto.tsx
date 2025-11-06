@@ -96,7 +96,7 @@ const ProjetoPage: React.FC = () => {
   const { id: protocoloMestreId } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list"); // Mudei o padrão para "list" para você ver
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [versoes, setVersoes] = useState<ProtocoloVersao[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -172,9 +172,7 @@ const ProjetoPage: React.FC = () => {
     fetchVersoes();
   }, [protocoloMestreId, navigate]);
   
-  // Ação de clique (sem alterações)
-  const handleVersaoClick = (versaoClicada: ProtocoloVersao) => {
-    console.log(`Clicou na versão ${versaoClicada.id}. Navegando para /introducao/${protocoloMestreId}`);
+  const handleVersaoClick = (versaoClicada: ProtocoloVersao) => {    
     navigate(`/introducao/${protocoloMestreId}`);
   };
 

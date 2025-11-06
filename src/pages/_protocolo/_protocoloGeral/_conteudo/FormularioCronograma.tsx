@@ -59,7 +59,6 @@ const FormularioCronograma = () => {
 
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
-    console.log(data);
     try {
       // Salva os dados no localStorage
       localStorage.setItem("dadosCronograma", JSON.stringify(data));

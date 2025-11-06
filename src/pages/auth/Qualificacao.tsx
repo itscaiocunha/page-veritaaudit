@@ -351,7 +351,6 @@ const Qualificacao = () => {
         jsonDataPayload.linkLinkedin = links.linkedinLink;
       }
 
-      console.log("Payload JSON a ser enviado no campo 'data':", JSON.stringify(jsonDataPayload, null, 2));
       formData.append('data', new Blob([JSON.stringify(jsonDataPayload)], { type: 'application/json' }), 'payload.json');
 
       const token = sessionStorage.getItem('token');

@@ -156,7 +156,6 @@ const FormularioBibliografia = () => {
     setIsSubmitting(true);
     try {
       localStorage.setItem("dadosBibliografia", JSON.stringify(data));
-      console.log("Dados salvos:", data);
     } catch (error) {
       console.error("Erro ao salvar os dados:", error);
     }

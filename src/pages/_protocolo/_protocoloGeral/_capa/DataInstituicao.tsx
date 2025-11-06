@@ -315,7 +315,6 @@ const FormularioInstituicao = () => {
     // --- Função de submissão do formulário. ---
     const onSubmit = async (data: FormValues) => {
         setIsSubmitting(true);
-        console.log("Dados da Instituição de Pesquisa:", data);
         
         try {
             const storedData = JSON.parse(localStorage.getItem('dataInstituicao') || '{}');
