@@ -152,8 +152,6 @@ const ProjetoPage: React.FC = () => {
 
         const data: ProtocoloVersao = await response.json();
         
-        // Coloca o objeto dentro de um array
-        // Para testar, você pode duplicar o item: setVersoes([data, data]);
         setVersoes([data]); 
 
       } catch (err) {

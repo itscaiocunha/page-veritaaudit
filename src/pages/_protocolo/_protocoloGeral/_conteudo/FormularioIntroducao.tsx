@@ -17,7 +17,8 @@ import { useState, useEffect } from "react";
 // --- Schema (MODIFICADO) ---
 const validationSchema = yup.object({
   conteudoIntroducao: yup.string().required("Este campo é obrigatório."),
-  palavrasChaves: yup.string().optional(), // NOVO CAMPO
+  // CORREÇÃO 1: Tornei o campo obrigatório conforme exigência da API
+  palavrasChaves: yup.string().required("Este campo é obrigatório. Insira as palavras-chave."),
 });
 
 type FormValues = yup.InferType<typeof validationSchema>;
@@ -51,7 +52,7 @@ const instrucoes = (
   </div>
 );
 
-// --- NOVO: Instruções para Palavras-Chave ---
+// --- Instruções para Palavras-Chave ---
 const instrucoesPalavrasChave = (
   <p>Separe as palavras-chave por vírgulas (ex: "Protocolo, Teste, Animal").</p>
 );
@@ -101,11 +102,10 @@ const FormularioIntroducao = () => {
     getValues,
   } = useForm<FormValues>({
     resolver: yupResolver(validationSchema),
-    // MODIFICADO: Adicionado default para o novo campo
     defaultValues: { conteudoIntroducao: "", palavrasChaves: "" },
   });
 
-  // useEffect para carregar dados (MODIFICADO)
+  // useEffect para carregar dados
   useEffect(() => {
     const storageKey = `dadosIntroducao_${protocoloMestreId || "draft"}`;
 
@@ -157,7 +157,6 @@ const FormularioIntroducao = () => {
           } else if (response.status === 404) {
             console.warn("Nenhuma versão ativa encontrada (404), limpando.");
             localStorage.removeItem(storageKey);
-            // MODIFICADO: Resetar ambos os campos
             reset({ conteudoIntroducao: "", palavrasChaves: "" });
             setError("Nenhuma versão ativa encontrada para este protocolo.");
             return;
@@ -169,9 +168,9 @@ const FormularioIntroducao = () => {
 
         const data = await response.json();
         
-        // MODIFICADO: Buscar os dois campos da API
         const conteudoApi = data.introducao?.conteudo;
-        const palavrasChavesApi = data.introducao?.palavrasChaves; // Assumindo este caminho
+        // CORREÇÃO 3: Tenta ler singular ou plural, caso a API varie
+        const palavrasChavesApi = data.introducao?.palavrasChaves || data.introducao?.palavrasChave;
         const versaoIdApi = data.id;
 
         if (versaoIdApi) {
@@ -181,7 +180,6 @@ const FormularioIntroducao = () => {
         }
 
         if (conteudoApi || palavrasChavesApi) {
-          // MODIFICADO: Criar objeto com ambos os campos
           const dadosApi = {
             conteudoIntroducao: conteudoApi || "",
             palavrasChaves: palavrasChavesApi || "",
@@ -190,7 +188,6 @@ const FormularioIntroducao = () => {
           reset(dadosApi);
         } else {
           localStorage.removeItem(storageKey);
-          // MODIFICADO: Resetar ambos os campos
           reset({ conteudoIntroducao: "", palavrasChaves: "" });
         }
       } catch (err) {
@@ -230,11 +227,11 @@ const FormularioIntroducao = () => {
 
     const API_URL = `https://verita-brgchubha6ceathm.brazilsouth-01.azurewebsites.net/api/protocolo/versao/introducao`;
 
-    // MODIFICADO: Adicionado 'palavrasChaves' ao body
+    // CORREÇÃO 2: Alterado a chave para 'palavrasChave' (singular) conforme erro da API
     const body = {
       idProtocolo: protocoloVersaoId,
       conteudo: data.conteudoIntroducao,
-      palavrasChaves: data.palavrasChaves, // NOVO
+      palavrasChave: data.palavrasChaves, 
     };
 
     try {
@@ -249,14 +246,14 @@ const FormularioIntroducao = () => {
       });
 
       if (!response.ok) {
+        const errorBody = await response.text();
         try {
-          const errorData = await response.json();
+          const errorData = JSON.parse(errorBody);
           const errorMessage =
             errorData.idProtocolo || JSON.stringify(errorData);
           throw new Error(`Falha ao salvar na API: ${errorMessage}`);
         } catch (jsonError) {
-          const errorText = await response.text();
-          throw new Error(`Falha ao salvar na API: ${errorText}`);
+          throw new Error(`Falha ao salvar na API: ${errorBody}`);
         }
       }
 
@@ -315,7 +312,6 @@ const FormularioIntroducao = () => {
       const data = getValues();
       try {
         await handleSaveApi(data);
-        // Sucesso
       } catch (error) {
         console.error("Falha no 'Salvar':", error);
       }
@@ -359,7 +355,6 @@ const FormularioIntroducao = () => {
             </div>
           )}
 
-          {/* // MODIFICADO: Adicionado 'space-y-8' para espaçar os campos */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8"> 
             
             {/* --- CAMPO CONTEÚDO INTRODUÇÃO --- */}
@@ -409,7 +404,7 @@ const FormularioIntroducao = () => {
                   htmlFor="palavrasChaves"
                   className="text-base font-semibold text-gray-700"
                 >
-                  Palavras-Chave
+                  Palavras-Chave <span className="text-red-500">*</span>
                 </Label>
                 <TooltipProvider>
                   <Tooltip>
@@ -432,7 +427,7 @@ const FormularioIntroducao = () => {
                 <Textarea
                   id="palavrasChaves"
                   {...register("palavrasChaves")}
-                  className="min-h-[100px] mt-1 bg-white" // Altura menor
+                  className="min-h-[100px] mt-1 bg-white"
                   disabled={isDataLoading}
                   placeholder="Ex: Protocolo, Teste, Animal, ..."
                 />
@@ -443,9 +438,8 @@ const FormularioIntroducao = () => {
               </p>
             </div>
 
-            {/* --- SEÇÃO DE BOTÕES (Sem alterações) --- */}
+            {/* --- SEÇÃO DE BOTÕES --- */}
             <div className="flex justify-between items-center pt-6 border-t border-gray-200">
-              {/* BOTÃO VOLTAR */}
               <Button
                 type="button"
                 variant="outline"
@@ -457,7 +451,6 @@ const FormularioIntroducao = () => {
               </Button>
 
               <div className="flex gap-4">
-                {/* BOTÃO SALVAR (API) */}
                 <Button
                   type="button"
                   variant="outline"
