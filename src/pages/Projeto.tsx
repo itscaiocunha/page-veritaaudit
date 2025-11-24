@@ -9,7 +9,6 @@ interface ProtocoloVersao {
   titulo: string;
 }
 
-// Função de data (sem alterações)
 const formatarData = (isoDate: string) => {
   if (!isoDate) return "Data desconhecida";
   try {
@@ -29,7 +28,6 @@ const formatarData = (isoDate: string) => {
   }
 };
 
-// --- Componente de Card (Grid View) (Sem alterações) ---
 const VersaoCard: React.FC<{ versao: ProtocoloVersao; onClick: () => void }> = ({
   versao,
   onClick,
@@ -59,10 +57,6 @@ const VersaoCard: React.FC<{ versao: ProtocoloVersao; onClick: () => void }> = (
   );
 };
 
-// ---
-// MODIFICADO: Componente de Item (List View)
-// Removido o 'last:border-b-0'
-// ---
 const VersaoListItem: React.FC<{ versao: ProtocoloVersao; onClick: () => void }> = ({
   versao,
   onClick,
@@ -90,7 +84,6 @@ const VersaoListItem: React.FC<{ versao: ProtocoloVersao; onClick: () => void }>
     </div>
   );
 };
-
 
 const ProjetoPage: React.FC = () => {
   const { id: protocoloMestreId } = useParams<{ id: string }>();
@@ -245,11 +238,6 @@ const ProjetoPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              // ---
-              // MODIFICADO: List View
-              // Removido rounded-lg, shadow-md, e border.
-              // Adicionado border-t.
-              // ---
               <div className="bg-white border-t border-gray-200 overflow-hidden">
                  {versoes.map((versao) => (
                   <VersaoListItem 

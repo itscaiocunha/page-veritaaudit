@@ -38,7 +38,7 @@ import RastreamentoDocumentos from "./pages/_formulario/RastreamentoDocumento";
 import LocalEtapaClinica from "./pages/_formulario/LocalEtapaClinica";
 import EventoAdverso from "./pages/_formulario/EventoAdverso";
 import ProjetoPage from "./pages/Projeto";
-// import EquipeExecutora from "./pages/_formulario/_protocoloEquipe/DataEquipeExecutora";
+import EquipeExecutora from "./pages/_formulario/_protocoloEquipe/DataEquipeExecutora";
 // import TriagemBovino from "./pages/_formulario/_triagem/DataBovino";
 // import InventarioPVI from "./pages/_formulario/_inventarioPVI/DataInventarioPVI";
 // import PesagemAnimais from "./pages/_formulario/Pesagem";
@@ -96,17 +96,17 @@ const App = () => (
           <Route path="/material-metodo/:id" element={<FormularioMetodo/>}/> //6
           <Route path="/estatistica/:id" element={<FormularioEstatistica/>}/> //7
           <Route path="/saude/:id" element={<FormularioSaude/>}/> //8
-          <Route path="/evento" element={<FormularioEventoAdverso/>}/> //9
-          <Route path="/medicacao-concomitante" element={<FormularioConcomitante/>}/> //10
-          <Route path="/eutanasia" element={<FormularioEutanasia/>}/> //11
-          <Route path="/cronograma" element={<FormularioCronograma/>}/> //12
+          <Route path="/evento/:id" element={<FormularioEventoAdverso/>}/> //9
+          <Route path="/medicacao-concomitante/:id" element={<FormularioConcomitante/>}/> //10
+          <Route path="/eutanasia/:id" element={<FormularioEutanasia/>}/> //11
+          <Route path="/cronograma/:id" element={<FormularioCronograma/>}/> //12
           <Route path="/anexos/:id" element={<FormularioAnexos/>}/> //13
-          <Route path="/bibliografia" element={<FormularioBibliografia/>}/> //14
+          <Route path="/bibliografia/:id" element={<FormularioBibliografia/>}/> //14
           <Route path="/protocolo-final/:id" element={<VisualizacaoCompletaPDF/>}/>
 
           // Formulários
-          {/* <Route path="/formulario/equipe-executora" element={<EquipeExecutora/>}/>
-          <Route path="/formulario/triagem/bovino" element={<TriagemBovino/>}/>
+          <Route path="/formulario/equipe-executora" element={<EquipeExecutora/>}/>
+          {/* <Route path="/formulario/triagem/bovino" element={<TriagemBovino/>}/>
           <Route path="/formulario/inventario/produto-veterinario" element={<InventarioPVI/>}/>
           <Route path="/formulario/pesagem" element={<PesagemAnimais/>}/>
           <Route path="/formulario/randomizacao" element={<Randomizacao/>}/>
