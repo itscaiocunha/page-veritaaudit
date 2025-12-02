@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 import { Trash2, Plus, ChevronDown, ChevronUp } from "lucide-react";
 
 // --- Helpers e Componentes Auxiliares ---
@@ -867,6 +868,7 @@ const LocalProtocol = () => {
           </form>
         </div>
       </div>
+      <ScrollToTopButton />
     </div>
   );
 };

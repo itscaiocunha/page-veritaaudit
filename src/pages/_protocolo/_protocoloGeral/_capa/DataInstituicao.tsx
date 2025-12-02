@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trash2, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 
 // --- Helpers, Componentes e Schemas Auxiliares ---
 
@@ -541,6 +542,7 @@ const FormularioInstituicao = () => {
                 </form>
             </div>
         </div>
+        <ScrollToTopButton />
     </div>
     );
 };

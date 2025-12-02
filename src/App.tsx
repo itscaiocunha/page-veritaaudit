@@ -123,12 +123,12 @@ const App = () => (
           <Route path="/formulario/destino-carcaca" element={<DestinoCarcaca/>}/>
           <Route path="/formulario/necropsia" element={<Necropsia/>}/>
           <Route path="/formulario/envio-produto" element={<EnvioProduto/>}/>
-          <Route path="/formulario/colheita-matriz" element={<ColheitaMatriz/>}/> */}
+          <Route path="/formulario/colheita-matriz" element={<ColheitaMatriz/>}/>
           <Route path="/formulario/sangue-seriada" element={<ColheitaSangueSeriada/>}/>
           <Route path="/formulario/colheita-amostra-leite" element={<ColheitaAmostraLeite />} />
           <Route path="/formulario/rastreamento-documento" element={<RastreamentoDocumentos />} />
           <Route path="/formulario/etapa-clinica" element={<LocalEtapaClinica />} />
-          <Route path="/formulario/evento-adverso" element={<EventoAdverso />} />
+          <Route path="/formulario/evento-adverso" element={<EventoAdverso />} /> */}
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

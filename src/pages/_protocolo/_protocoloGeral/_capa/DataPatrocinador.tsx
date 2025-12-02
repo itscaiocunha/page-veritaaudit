@@ -6,6 +6,7 @@ import * as yup from "yup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 import { Trash2, Plus, ChevronDown, ChevronUp } from "lucide-react";
 
 // --- Schema de Validação para o Endereço ---
@@ -642,7 +643,8 @@ const FormularioParticipantes = () => {
                 </form>
             </div>
         </div>
-        </ div>
+        <ScrollToTopButton />
+    </div>
     );
 };
 export default FormularioParticipantes;

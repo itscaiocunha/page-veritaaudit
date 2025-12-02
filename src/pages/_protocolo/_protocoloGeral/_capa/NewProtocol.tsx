@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 import * as yup from "yup";
 
 // --- Tipagem para os dados da API ---
@@ -365,6 +366,7 @@ const Protocolo = () => {
           </form>
         </div>
       </div>
+      <ScrollToTopButton />
     </div>
   );
 };
