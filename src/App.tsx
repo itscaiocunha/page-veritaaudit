@@ -39,6 +39,9 @@ import LocalEtapaClinica from "./pages/_formulario/LocalEtapaClinica";
 import EventoAdverso from "./pages/_formulario/EventoAdverso";
 import ProjetoPage from "./pages/Projeto";
 import EquipeExecutora from "./pages/_formulario/_protocoloEquipe/DataEquipeExecutora";
+import FinalizacaoParticipacao from "./pages/_formulario/ParticipacaoPesquisa";
+import FormularioRecebimentoCustodia from "./pages/_formulario/FormularioRecebimentoCustodia";
+import DestinacaoPVI from "./pages/_formulario/DestinacaoPVI";
 // import TriagemBovino from "./pages/_formulario/_triagem/DataBovino";
 // import InventarioPVI from "./pages/_formulario/_inventarioPVI/DataInventarioPVI";
 // import PesagemAnimais from "./pages/_formulario/Pesagem";
@@ -106,6 +109,9 @@ const App = () => (
 
           // Formulários
           <Route path="/formulario/equipe-executora" element={<EquipeExecutora/>}/>
+          <Route path="/formulario/finalizacao-pesquisa" element={<FinalizacaoParticipacao/>}/>
+          <Route path="/formulario/recebimento-custodia" element={<FormularioRecebimentoCustodia/>}/>
+          <Route path="/formulario/destinacao-desacordo-inutilizado" element={<DestinacaoPVI />} />
           {/* <Route path="/formulario/triagem/bovino" element={<TriagemBovino/>}/>
           <Route path="/formulario/inventario/produto-veterinario" element={<InventarioPVI/>}/>
           <Route path="/formulario/pesagem" element={<PesagemAnimais/>}/>
@@ -118,7 +124,6 @@ const App = () => (
           <Route path="/formulario/colheita-sangue" element={<ColheitaSangue/>}/>
           <Route path="/formulario/notas-estudo" element={<NotasAoEstudo/>}/>
           <Route path="/formulario/colheita-leite" element={<ColheitaAmostraLeite/>}/>
-          <Route path="/formulario/finalizacao-pesquisa" element={<FinalizacaoParticipacao/>}/>
           <Route path="/formulario/condicao-corporal" element={<EscoreCondicaoCorporal/>}/>
           <Route path="/formulario/destino-carcaca" element={<DestinoCarcaca/>}/>
           <Route path="/formulario/necropsia" element={<Necropsia/>}/>
