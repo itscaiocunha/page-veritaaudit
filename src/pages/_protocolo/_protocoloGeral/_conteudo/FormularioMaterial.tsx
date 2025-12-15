@@ -427,7 +427,7 @@ const FormularioMaterialMetodo = () => {
                                             </div>
                                         ))}
                                     </div>
-                                    <Button type="button" variant="outline" size="sm" className="mt-4 text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => appendCaracteristica({ especie: '', raca: '', sexo: '', idade: '', peso: '', identificacao: '' })}>
+                                    <Button type="button" variant="outline" size="sm" className="mt-4 text-green-600 border-green-200 hover:bg-green-50" onClick={() => appendCaracteristica({ especie: '', raca: '', sexo: '', idade: '', peso: '', identificacao: '' })}>
                                         <Plus className="h-4 w-4 mr-2" /> Adicionar Grupo
                                     </Button>
                                     <p className="text-red-500 text-xs mt-1">{errors.animais?.caracteristicasGerais?.message}</p>
