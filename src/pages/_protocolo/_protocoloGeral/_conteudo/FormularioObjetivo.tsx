@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Info, Loader2, ChevronLeft, AlertCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useNotify } from "@/hooks/use-notify";
 
 // --- Schema ---
 const validationSchema = yup.object({
@@ -40,6 +41,7 @@ const FormHeader = () => {
 // --- Componente Principal ---
 const FormularioObjetivo = () => {
   const navigate = useNavigate();
+  const notify = useNotify();
   const { id: protocoloMestreId } = useParams<{ id: string }>();
 
   // --- Estados ---
@@ -221,6 +223,7 @@ const FormularioObjetivo = () => {
           "Salvo na API. ID da versão atualizado para:",
           novoProtocoloVersaoId
         );
+        notify.success("Sucesso!", "Dados salvos corretamente.");
       } else {
         console.warn("API salvou, mas não retornou um novo ID na resposta.");
       }
@@ -235,6 +238,7 @@ const FormularioObjetivo = () => {
         setError(`${err.message}`);
       } else {
         setError("Falha ao salvar na API.");
+        notify.error("Erro", "Falha ao salvar.");
       }
       throw err;
     }

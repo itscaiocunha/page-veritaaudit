@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Info, Loader2, ChevronLeft, AlertCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useNotify } from "@/hooks/use-notify";
 
 // --- Schema ---
 const validationSchema = yup.object({
@@ -40,6 +41,7 @@ const FormHeader = () => {
 // --- Componente Principal ---
 const FormularioSaude = () => {
   const navigate = useNavigate();
+  const notify = useNotify();
   const { id: protocoloMestreId } = useParams<{ id: string }>();
 
   // --- Estados ---
@@ -200,16 +202,23 @@ const FormularioSaude = () => {
       });
 
       if (!response.ok) {
-        try {
+        const contentType = response.headers.get("content-type");
+
+        let message = "Erro desconhecido";
+
+        if (contentType?.includes("application/json")) {
           const errorData = await response.json();
-          const errorMessage =
-            errorData.idProtocolo || JSON.stringify(errorData);
-          throw new Error(`Falha ao salvar na API: ${errorMessage}`);
-        } catch (jsonError) {
-          const errorText = await response.text();
-          throw new Error(`Falha ao salvar na API: ${errorText}`);
+          message =
+            errorData.idProtocolo ||
+            errorData.message ||
+            JSON.stringify(errorData);
+        } else {
+          message = await response.text();
         }
+
+        throw new Error(`Falha ao salvar na API: ${message}`);
       }
+
 
       const responseData = await response.json();
       const novoProtocoloVersaoId = responseData.id;
@@ -220,6 +229,7 @@ const FormularioSaude = () => {
           "Salvo na API. ID da versão atualizado para:",
           novoProtocoloVersaoId
         );
+        notify.success("Sucesso!", "Dados salvos corretamente.");
       } else {
         console.warn("API salvou, mas não retornou um novo ID na resposta.");
       }
@@ -233,6 +243,7 @@ const FormularioSaude = () => {
         setError(`${err.message}`);
       } else {
         setError("Falha ao salvar na API.");
+        notify.error("Erro!", "Falha ao salvar na API.");
       }
       throw err;
     }

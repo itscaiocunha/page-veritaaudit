@@ -13,6 +13,7 @@ import {
 import { Info, Loader2, ChevronLeft, AlertCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useNotify } from "@/hooks/use-notify";
 
 // --- Schema (MODIFICADO) ---
 const validationSchema = yup.object({
@@ -82,6 +83,7 @@ const FormHeader = () => {
 // --- Componente Principal ---
 const FormularioIntroducao = () => {
   const navigate = useNavigate();
+  const notify = useNotify();
   const { id: protocoloMestreId } = useParams<{ id: string }>();
 
   // --- Estados ---
@@ -266,6 +268,7 @@ const FormularioIntroducao = () => {
           "Salvo na API. ID da versão atualizado para:",
           novoProtocoloVersaoId
         );
+        notify.success("Sucesso!", "Dados salvos corretamente.");
       } else {
         console.warn("API salvou, mas não retornou um novo ID na resposta.");
       }
@@ -275,6 +278,7 @@ const FormularioIntroducao = () => {
       setError(null);
     } catch (err) {
       console.error("Erro ao salvar dados na API:", err);
+      notify.error("Erro", "Falha ao salvar.");
       if (err instanceof Error) {
         setError(`${err.message}`);
       } else {
@@ -404,7 +408,7 @@ const FormularioIntroducao = () => {
                   htmlFor="palavrasChaves"
                   className="text-base font-semibold text-gray-700"
                 >
-                  Palavras-Chave <span className="text-red-500">*</span>
+                  Palavras-Chave
                 </Label>
                 <TooltipProvider>
                   <Tooltip>

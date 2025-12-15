@@ -50,21 +50,15 @@ interface FormularioSelecionado {
 // --- Função de Formatação de Data ---
 const formatarData = (isoDate: string) => {
   if (!isoDate) return "Data desconhecida";
-  try {
-    const date = new Date(isoDate);
-    if (isNaN(date.getTime())) {
-      const [ano, mes, dia] = isoDate.split("T")[0].split("-");
-      return `${dia}/${mes}/${ano}`;
-    }
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  } catch (e) {
-    console.error("Erro ao formatar data:", isoDate, e);
-    return isoDate;
-  }
+
+  const [ano, mes, dia] = isoDate.split("-");
+  const date = new Date(Number(ano), Number(mes) - 1, Number(dia));
+
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 };
 
 // --- Componentes de Card (Grid View) ---
@@ -72,7 +66,7 @@ const formatarData = (isoDate: string) => {
 const VersaoCard: React.FC<{ versao: ProtocoloVersao; onClick: () => void }> = ({ versao, onClick }) => (
   <div onClick={onClick} className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow border border-gray-200 flex flex-col overflow-hidden cursor-pointer group" role="button">
     <div className="p-4 flex-grow">
-      <h3 className="font-bold text-lg text-gray-800 truncate group-hover:text-blue-600 transition-colors" title={versao.titulo}>{versao.titulo}</h3>
+      <h3 className="font-bold text-lg text-gray-800 truncate group-hover:text-green-600 transition-colors" title={versao.titulo}>{versao.titulo}</h3>
       <p className="text-sm text-gray-600 mt-2"><strong>ID da Versão:</strong> {versao.id}</p>
       <p className="text-sm text-gray-500"><strong>Criação:</strong> {formatarData(versao.dataCriacao)}</p>
       <p className={`text-sm font-bold mt-2 ${versao.ativo ? "text-green-600" : "text-gray-500"}`}>{versao.ativo ? "● Ativo" : "○ Inativo"}</p>
@@ -84,15 +78,15 @@ const VersaoCard: React.FC<{ versao: ProtocoloVersao; onClick: () => void }> = (
 const AnexoCard: React.FC<{ anexo: FormularioSelecionado; onClick: () => void }> = ({ anexo, onClick }) => (
   <div 
     onClick={onClick}
-    className="bg-white rounded-lg shadow-md hover:shadow-lg hover:border-blue-300 transition-all border border-gray-200 flex flex-col overflow-hidden p-4 cursor-pointer group"
+    className="bg-white rounded-lg shadow-md hover:shadow-lg hover:border-green-300 transition-all border border-gray-200 flex flex-col overflow-hidden p-4 cursor-pointer group"
     role="button"
   >
     <div className="flex items-start gap-3">
-      <div className="p-2 bg-blue-50 rounded-lg text-blue-600 shrink-0 group-hover:bg-blue-100 transition-colors">
+      <div className="p-2 bg-green-50 rounded-lg text-green-600 shrink-0 group-hover:bg-green-100 transition-colors">
         <FileText className="h-6 w-6" />
       </div>
       <div>
-        <h3 className="font-semibold text-gray-800 text-sm leading-tight group-hover:text-blue-600 transition-colors">{anexo.title}</h3>
+        <h3 className="font-semibold text-gray-800 text-sm leading-tight group-hover:text-green-600 transition-colors">{anexo.title}</h3>
         <p className="text-xs text-gray-400 mt-1">ID: {anexo.id}</p>
       </div>
     </div>
@@ -117,12 +111,12 @@ const VersaoListItem: React.FC<{ versao: ProtocoloVersao; onClick: () => void }>
 const AnexoListItem: React.FC<{ anexo: FormularioSelecionado; onClick: () => void }> = ({ anexo, onClick }) => (
   <div 
     onClick={onClick}
-    className="w-full p-4 flex items-center gap-4 border-b border-gray-200 last:border-b-0 hover:bg-blue-50 transition-colors cursor-pointer group"
+    className="w-full p-4 flex items-center gap-4 border-b border-gray-200 last:border-b-0 hover:bg-green-50 transition-colors cursor-pointer group"
     role="button"
   >
-    <FileText className="h-5 w-5 text-blue-500 shrink-0 group-hover:text-blue-700" />
+    <FileText className="h-5 w-5 text-green-500 shrink-0 group-hover:text-green-700" />
     <div className="flex-1">
-      <h3 className="text-sm font-medium text-gray-900 group-hover:text-blue-700">{anexo.title}</h3>
+      <h3 className="text-sm font-medium text-gray-900 group-hover:text-green-700">{anexo.title}</h3>
       <p className="text-xs text-gray-500">ID: {anexo.id}</p>
     </div>
   </div>
@@ -263,14 +257,14 @@ const ProjetoPage: React.FC = () => {
         <div className="flex items-center space-x-2 bg-white shadow-sm rounded-md p-1 border border-gray-200">
           <button
             onClick={() => setViewMode("grid")}
-            className={`p-1.5 rounded transition-colors ${viewMode === "grid" ? "bg-blue-600 text-white shadow" : "text-gray-500 hover:bg-gray-100"}`}
+            className={`p-1.5 rounded transition-colors ${viewMode === "grid" ? "bg-green-600 text-white shadow" : "text-gray-500 hover:bg-gray-100"}`}
             title="Visualização em Grade"
           >
             <LayoutGrid className="h-5 w-5" />
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`p-1.5 rounded transition-colors ${viewMode === "list" ? "bg-blue-600 text-white shadow" : "text-gray-500 hover:bg-gray-100"}`}
+            className={`p-1.5 rounded transition-colors ${viewMode === "list" ? "bg-green-600 text-white shadow" : "text-gray-500 hover:bg-gray-100"}`}
             title="Visualização em Lista"
           >
             <List className="h-5 w-5" />
