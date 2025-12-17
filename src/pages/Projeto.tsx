@@ -2,37 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, LayoutGrid, List, FileText } from "lucide-react";
 
-const ALL_PROTOCOL_FORMS = [
-  { id: "ec-1-0", title: "1.0 - Registro de equipe executora e treinamento do protocolo", path: "/equipe-treinamento" },
-  { id: "ec-2-0", title: "2.0 - Local da etapa clínica", path: "/local-etapa-clinica" },
-  { id: "ec-3-0", title: "3.0 - Inventário do produto veterinário investigacional", path: "/inventario-produto-veterinario" },
-  { id: "ec-4-0", title: "4.0 - Pesagem dos animais por Dia", path: "/pesagem-animais" },
-  { id: "ec-5-0", title: "5.0 - Exame físico e laboratorial", path: "/exame-fisico-laboratorial" },
-  { id: "ec-6-0", title: "6.0 - Identificação dos animais", path: "/identificacao-animais" },
-  { id: "ec-7-0", title: "7.0 - Seleção dos animais", path: "/selecao-animais" },
-  { id: "ec-8-0", title: "8.0 - Randomização", path: "/randomizacao" },
-  { id: "ec-9-0", title: "9.0 - Tratamento", path: "/tratamento" },
-  { id: "ec-10-0", title: "10.0 - Observações gerais de saúde (OGS)", path: "/observacoes-saude" },
-  { id: "ec-11-0", title: "11.0 - Relatório técnico veterinário", path: "/relatorio-veterinario" },
-  { id: "ec-12-0", title: "12.0 - Evento adverso", path: "/evento-adverso" },
-  { id: "ec-13-0", title: "13.0 - Finalização da participação na pesquisa", path: "/finalizacao-pesquisa" },
-  { id: "ec-14-0", title: "14.0 - Necropsia", path: "/necropsia" },
-  { id: "ec-15-0", title: "15.0 - Destino da carcaça", path: "/destino-carcaca" },
-  { id: "ec-17-0", title: "17.0 - Colheita de sangue", path: "/colheita-sangue" },
-  { id: "ec-18-0", title: "18.0 - Colheita de sangue seriada", path: "/colheita-sangue-seriada" },
-  { id: "ec-19-0", title: "19.0 - Colheita de matriz de tecido e processamento de amostra", path: "/colheita-tecido" },
-  { id: "ec-20-0", title: "20.0 - Colheita de amostra de leite", path: "/colheita-leite" },
-  { id: "ec-21-0", title: "21.0 - Produtividade das vacas leiteiras", path: "/produtividade-vacas" },
-  { id: "ec-24-0", title: "24.0 - Escore de condição corporal", path: "/escore-corporal" },
-  { id: "ec-27-0", title: "27.0 - Notas ao Estudo", path: "/notas-estudo" },
-  { id: "ec-28-0", title: "28.0 - Envio de Produto", path: "/envio-produto" },
-  { id: "ec-30-0", title: "30.0 - Rastreamento de envio e recebimento de documentos", path: "/rastreamento-documentos" },
-  { id: "ec-31-0", title: "31.0 - Avaliação do local de aplicação", path: "/avaliacao-local-aplicacao" },
-  { id: "ec-32-0", title: "32.0 - Triagem Bovinos", path: "/triagem-bovinos" },
-  { id: "consentimento", title: "Formulário de Consentimento Livre e Esclarecido (TCLE)", path: "/tcle" },
-  { id: "termoAssentimento", title: "Termo de Assentimento Livre e Esclarecido (TALE)", path: "/tale" },
-];
-
 // --- Interfaces ---
 interface ProtocoloVersao {
   id: number;
@@ -199,33 +168,57 @@ const ProjetoPage: React.FC = () => {
     fetchVersoes();
   }, [protocoloMestreId, navigate]);
 
-  // 2. Carregar Anexos do LocalStorage
+  // 2. Carregar Anexos (Formulários Selecionados) via API de Detalhes
   useEffect(() => {
     if (!protocoloMestreId) return;
 
-    try {
-      const storageKey = `dadosAnexos_${protocoloMestreId}`;
-      const savedData = localStorage.getItem(storageKey);
+    const fetchAnexos = async () => {
+      const apiKey = "2NtzCUDl8Ib2arnDRck0xK8taguGeFYuZqnUzpiZ9Wp-tUZ45--/i=tKxzwTPBvtykMSx!0t?7c/Z?NllkokY=TEC2DSonmOMUu0gxdCeh70/rA2NSsm7Ohjn7VM2BeP";
+      let TOKEN = sessionStorage.getItem("token");
 
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        const formulariosObj = parsedData.formularios || {};
-
-        // Filtra a lista mestre e mapeia para incluir o path
-        const selecionados = ALL_PROTOCOL_FORMS
-          .filter(form => formulariosObj[form.id] === true)
-          .map(form => ({
-            id: form.id,
-            title: form.title,
-            path: form.path
-          }));
-        
-        setAnexosSelecionados(selecionados);
+      if (!TOKEN) {
+        console.error("Usuário não autenticado ao buscar anexos.");
+        navigate("/login");
+        return;
       }
-    } catch (err) {
-      console.error("Erro ao ler anexos do localStorage:", err);
-    }
-  }, [protocoloMestreId]);
+
+      TOKEN = TOKEN.replace(/"/g, '');
+
+      const API_URL_DETALHES = `https://verita-brgchubha6ceathm.brazilsouth-01.azurewebsites.net/api/protocolo/versao/ativo/detalhes/${protocoloMestreId}`;
+
+      try {
+        const response = await fetch(API_URL_DETALHES, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${TOKEN}`,
+            "X-API-KEY": apiKey,
+          },
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Erro ao buscar anexos: ${response.status} - ${errorText}`);
+          setAnexosSelecionados([]);
+          return;
+        }
+
+        const data = await response.json();
+        const anexosApi = (data?.anexos || []).map((anexo: any) => ({
+          id: String(anexo.identificador),
+          title: anexo.titulo,
+          path: anexo.path,
+        }));
+
+        setAnexosSelecionados(anexosApi);
+      } catch (err) {
+        console.error("Erro ao carregar anexos do protocolo:", err);
+        setAnexosSelecionados([]);
+      }
+    };
+
+    fetchAnexos();
+  }, [protocoloMestreId, navigate]);
   
   // Navegação para Versões
   const handleVersaoClick = (versaoClicada: ProtocoloVersao) => {    
@@ -233,11 +226,12 @@ const ProjetoPage: React.FC = () => {
   };
 
   const handleAnexoClick = (anexo: FormularioSelecionado) => {
-    // Navega para o path do formulário + ID do protocolo mestre
-    // Ex: /equipe-treinamento/123
-    if (anexo.path) {
-      navigate('/formulario/equipe-executora');
-    }
+    if (!anexo.path) return;
+
+    // path vem da API, ex: "/local-etapa-clinica"
+    // Resultado final: /formulario/local-etapa-clinica
+    const cleanedPath = anexo.path.startsWith("/") ? anexo.path : `/${anexo.path}`;
+    navigate(`/formulario${cleanedPath}`);
   };
 
   return (
